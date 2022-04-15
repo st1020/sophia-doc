@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "sophia-doc"
+version = "0.1.0"
+description = "A python package to automatically generate API documents for Python modules."
+authors = ["st1020 <stone_1020@qq.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+docstring-parser = "^0.13"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
