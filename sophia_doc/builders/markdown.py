@@ -99,7 +99,7 @@ class MarkdownBuilder(Builder):
     def _new_builder(self, module: 'ModuleNode') -> 'Builder':
         return self.__class__(module, docstring_style=self.docstring_style, anchor_extend=self.anchor_extend)
 
-    def get_path(self, exclude_module_name: bool, **kwargs) -> Path:
+    def get_path(self, exclude_module_name: bool = False, **kwargs) -> Path:
         """Get the path to write file.
 
         Args:
