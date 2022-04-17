@@ -88,26 +88,32 @@ class MarkdownBuilder(Builder):
 
     Attributes:
         anchor_extend: If true will add anchor extend to title, like # Your title {#your-custom-id}
+        ignore_data: If true will ignore data in Markdown text.
     """
     anchor_extend: bool
+    ignore_data: bool
 
     def __init__(self, module: 'ModuleNode', *,
-                 docstring_style: DocstringStyle = DocstringStyle.AUTO, anchor_extend: bool = False):
+                 docstring_style: DocstringStyle = DocstringStyle.AUTO,
+                 anchor_extend: bool = False,
+                 ignore_data: bool = False):
         super().__init__(module, docstring_style=docstring_style)
         self.anchor_extend = anchor_extend
+        self.ignore_data = ignore_data
 
     def _new_builder(self, module: 'ModuleNode') -> 'Builder':
         return self.__class__(module, docstring_style=self.docstring_style, anchor_extend=self.anchor_extend)
 
-    def get_path(self, exclude_module_name: bool = False, **kwargs) -> Path:
+    def get_path(self, exclude_module_name: bool = False, init_file_name: str = 'index.md', **kwargs) -> Path:
         """Get the path to write file.
 
         Args:
             exclude_module_name: If true will write file to path which exclude module name,
                 like change output path form `./doc/sophia_doc/index.md` to `./doc/index.md`.
+            init_file_name: The name of Markdown file from __init__.py, `index.md` by default.
         """
         path = Path(*self.module.name.split('.')[(1 if exclude_module_name else 0):])
-        return path / 'index.md' if self.module.is_package else path.with_suffix('.md')
+        return path / init_file_name if self.module.is_package else path.with_suffix('.md')
 
     def text(self) -> str:
         result: List[str] = list()
@@ -341,6 +347,9 @@ class MarkdownBuilder(Builder):
         Returns:
             A markdown string.
         """
+        if self.ignore_data and kind == 'data':
+            return ''
+
         result: List[str] = list()
         result.append(self._extend_title(
             Markdown.title(Markdown.italic(kind) + ' ' + Markdown.inline_code(node.name), level + 1),

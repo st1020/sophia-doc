@@ -69,6 +69,11 @@ parser.add_argument('--docstring-style',
                     type=str,
                     default='auto',
                     help='Docstring style the python module used.')
+parser.add_argument('--ignore-data',
+                    type=bool,
+                    action=BooleanOptionalAction,
+                    default=False,
+                    help='Ignore data in Markdown text.')
 parser.add_argument('--anchor-extend',
                     type=bool,
                     action=BooleanOptionalAction,
@@ -84,6 +89,10 @@ parser.add_argument('--exclude-module-name',
                     action=BooleanOptionalAction,
                     default=False,
                     help='Write file to path which exclude module name.')
+parser.add_argument('--init-file-name',
+                    type=str,
+                    default='index.md',
+                    help='The name of Markdown file from __init__.py, index.md by default.')
 
 
 def cli():
@@ -91,8 +100,14 @@ def cli():
     MarkdownBuilder(
         ModuleNode(import_module(args.module)),
         docstring_style=getattr(DocstringStyle, args.docstring_style.upper()),
-        anchor_extend=args.anchor_extend
-    ).write(args.output_dir, overwrite=args.overwrite, exclude_module_name=args.exclude_module_name)
+        anchor_extend=args.anchor_extend,
+        ignore_data=args.ignore_data
+    ).write(
+        args.output_dir,
+        overwrite=args.overwrite,
+        exclude_module_name=args.exclude_module_name,
+        init_file_name=args.init_file_name
+    )
 
 
 if __name__ == '__main__':
