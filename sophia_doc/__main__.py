@@ -85,10 +85,15 @@ parser.add_argument('--exclude-module-name',
                     default=False,
                     help='Write file to path which exclude module name.')
 
-if __name__ == '__main__':
+
+def cli():
     args = parser.parse_args()
     MarkdownBuilder(
         ModuleNode(import_module(args.module)),
         docstring_style=getattr(DocstringStyle, args.docstring_style.upper()),
         anchor_extend=args.anchor_extend
     ).write(args.output_dir, overwrite=args.overwrite, exclude_module_name=args.exclude_module_name)
+
+
+if __name__ == '__main__':
+    cli()
