@@ -6,7 +6,7 @@ authors = ["st1020 <stone_1020@qq.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.8"
 docstring-parser = "^0.13"
 
 [build-system]
