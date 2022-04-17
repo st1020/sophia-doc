@@ -128,7 +128,11 @@ class MarkdownBuilder(Builder):
         for node in self.module.attributes:
             result.append(self.build_doc(node))
 
-        return '\n\n'.join(result)
+        return self._build_str(result)
+
+    @staticmethod
+    def _build_str(str_list: List[str]) -> str:
+        return '\n\n'.join(filter(lambda x: x, str_list))
 
     def build_doc(self, node: 'DocNode', *, level: int = 1, **kwargs) -> str:
         """Build markdown string from a DocNode.
@@ -227,7 +231,7 @@ class MarkdownBuilder(Builder):
             result.append(self.build_doc(node, level=level + 1, kind=kind,
                                          ignore_first_arg=kind == 'method' or kind == 'class method'))
 
-        return '\n\n'.join(result)
+        return self._build_str(result)
 
     @staticmethod
     def _build_argument(node: FunctionNode, docstring: 'Docstring', *, ignore_first_arg: bool = False) -> List[str]:
@@ -335,7 +339,7 @@ class MarkdownBuilder(Builder):
             result.append('- **Examples**')
             result.append(Markdown.indent(docstring.examples[0].description))
 
-        return '\n\n'.join(result)
+        return self._build_str(result)
 
     def build_data(self, node: DataNode, *, level: int = 1, kind: str = 'data', **kwargs) -> str:  # noqa
         """Build markdown string from a DataNode.
@@ -366,4 +370,4 @@ class MarkdownBuilder(Builder):
         docstring = self.get_docstring(node)
         result.extend(get_description(docstring))
 
-        return '\n\n'.join(result)
+        return self._build_str(result)
