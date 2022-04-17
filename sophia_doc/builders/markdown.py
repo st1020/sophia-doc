@@ -102,7 +102,10 @@ class MarkdownBuilder(Builder):
         self.ignore_data = ignore_data
 
     def _new_builder(self, module: 'ModuleNode') -> 'Builder':
-        return self.__class__(module, docstring_style=self.docstring_style, anchor_extend=self.anchor_extend)
+        return self.__class__(module,
+                              docstring_style=self.docstring_style,
+                              anchor_extend=self.anchor_extend,
+                              ignore_data=self.ignore_data)
 
     def get_path(self, exclude_module_name: bool = False, init_file_name: str = 'index.md', **kwargs) -> Path:
         """Get the path to write file.
