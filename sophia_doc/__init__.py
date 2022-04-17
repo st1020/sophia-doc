@@ -346,7 +346,7 @@ class ClassNode(DocNode[type]):
                     (name == '__init__' and not (isinstance(value, Enum) or self.is_abstract)):
                 if inspect.isdatadescriptor(value):
                     # ignore data descriptor create by __slots__
-                    if name in self.obj.__slots__:
+                    if name in getattr(self.obj, '__slots__', []):
                         continue
                     kind = 'data descriptor'
                     if isinstance(value, property) and value.fset is None:
