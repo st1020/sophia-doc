@@ -190,6 +190,7 @@ class MarkdownBuilder(Builder):
                 parma_dict = {
                     key: (annotation, None)
                     for key, annotation in node.annotations.items()
+                    if not key.startswith('_')
                 }
 
             if docstring.params:
