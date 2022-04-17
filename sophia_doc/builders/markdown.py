@@ -318,7 +318,7 @@ class MarkdownBuilder(Builder):
                 type_name = format_annotation(node.signature.return_annotation, base_module=node.module.obj)
 
             if type_name:
-                result.append(Markdown.indent(f'Type: {type_name}'))
+                result.append(Markdown.indent(f'Type: {Markdown.italic(type_name)}'))
 
             if docstring.returns and docstring.returns.description:
                 result.append(Markdown.indent(docstring.returns.description))
