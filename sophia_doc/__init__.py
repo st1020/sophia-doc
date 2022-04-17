@@ -342,8 +342,7 @@ class ClassNode(DocNode[type]):
         """A list of attributes of this class."""
         attributes = []
         for name, kind, cls, value in inspect.classify_class_attrs(self.obj):
-            if (is_visible_name(name) and cls is self.obj) or \
-                    (name == '__init__' and not (isinstance(value, Enum) or self.is_abstract)):
+            if (is_visible_name(name) and cls is self.obj) or (name == '__init__' and not isinstance(self.obj, Enum)):
                 if inspect.isdatadescriptor(value):
                     # ignore data descriptor create by __slots__
                     if name in getattr(self.obj, '__slots__', []):
