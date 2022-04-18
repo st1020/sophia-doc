@@ -152,7 +152,7 @@ class MarkdownBuilder(Builder):
             return self.build_data(node, level=level, **kwargs)
 
     def _extend_title(self, title: str, node: 'DocNode') -> str:
-        return title + '{#' + node.qualname + '}' if self.anchor_extend else title
+        return title + ' {#' + node.qualname + '}' if self.anchor_extend else title
 
     def build_class(self, node: ClassNode, *, level: int = 1) -> str:
         """Build markdown string from a ClassNode.
