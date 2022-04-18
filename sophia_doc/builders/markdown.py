@@ -187,7 +187,7 @@ class MarkdownBuilder(Builder):
             warnings.warn(f'Can not get __init__ method signature of class {node.name}')
         result.append(self._extend_title(title, node))
 
-        result.append('Bases: ' + Markdown.inline_code(', '.join(map(format_annotation, node.bases))))
+        result.append('Bases: ' + ', '.join(map(Markdown.inline_code, map(format_annotation, node.bases))))
 
         docstring = self.get_docstring(node)
         result.extend(get_description(docstring))
