@@ -19,12 +19,13 @@ def import_module(modname: str) -> ModuleType:
     """
     try:
         with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=ImportWarning)
+            warnings.filterwarnings("ignore", category=ImportWarning)
             return importlib.import_module(modname)
     except BaseException as exc:
         if isinstance(exc, KeyboardInterrupt):
             # Dot not catch KeyboardInterrupt.
-            # Catch KeyboardInterrupt may prevent user kill python when the module took a too long time to import.
+            # Catch KeyboardInterrupt may prevent user kill python
+            # when the module took a too long time to import.
             raise exc
         raise ImportError(exc, traceback.format_exc()) from exc
 
@@ -40,13 +41,13 @@ def format_annotation(annotation: Any, base_module: Optional[ModuleType] = None)
         The formatted annotation.
     """
     if annotation is inspect.Signature.empty:
-        return ''
+        return ""
     if isinstance(annotation, str):
         return annotation
     # use regex delete 'ForwardRef' from annotation
     return re.sub(
-        r'\bForwardRef\((?P<quot>[\'\"])(?P<string>.*?)(?P=quot)\)',
-        r'\g<string>',
+        r"\bForwardRef\((?P<quot>[\'\"])(?P<string>.*?)(?P=quot)\)",
+        r"\g<string>",
         inspect.formatannotation(annotation, base_module),
     )
 
@@ -68,18 +69,18 @@ def format_parameter(parameter: inspect.Parameter, type_comments: bool = False) 
 
     # Add annotation and default value
     if parameter.annotation is not inspect.Parameter.empty and type_comments:
-        formatted = '{}: {}'.format(formatted, format_annotation(parameter.annotation))
+        formatted = "{}: {}".format(formatted, format_annotation(parameter.annotation))
 
     if parameter.default is not inspect.Parameter.empty:
         if parameter.annotation is not inspect.Parameter.empty:
-            formatted = '{} = {}'.format(formatted, repr(parameter.default))
+            formatted = "{} = {}".format(formatted, repr(parameter.default))
         else:
-            formatted = '{}={}'.format(formatted, repr(parameter.default))
+            formatted = "{}={}".format(formatted, repr(parameter.default))
 
     if kind == inspect.Parameter.VAR_POSITIONAL:
-        formatted = '*' + formatted
+        formatted = "*" + formatted
     elif kind == inspect.Parameter.VAR_KEYWORD:
-        formatted = '**' + formatted
+        formatted = "**" + formatted
 
     return formatted
 
@@ -113,7 +114,7 @@ def format_signature(signature: inspect.Signature, type_comments: bool = False) 
         elif render_pos_only_separator:
             # It's not a positional-only parameter, and the flag
             # is set to 'True' (there were pos-only params before.)
-            result.append('/')
+            result.append("/")
             render_pos_only_separator = False
 
         if kind == inspect.Parameter.VAR_POSITIONAL:
@@ -121,10 +122,10 @@ def format_signature(signature: inspect.Signature, type_comments: bool = False) 
             # a '*' to separate keyword-only arguments
             render_kw_only_separator = False
         elif kind == inspect.Parameter.KEYWORD_ONLY and render_kw_only_separator:
-            # We have a keyword-only parameter to render and we haven't
+            # We have a keyword-only parameter to render, and we haven't
             # rendered an '*args'-like parameter before, so add a '*'
             # separator to the parameters list ("foo(arg1, *, arg2)" case)
-            result.append('*')
+            result.append("*")
             # This condition should be only triggered once, so
             # reset the flag
             render_kw_only_separator = False
@@ -134,12 +135,12 @@ def format_signature(signature: inspect.Signature, type_comments: bool = False) 
     if render_pos_only_separator:
         # There were only positional-only parameters, hence the
         # flag was not reset to 'False'
-        result.append('/')
+        result.append("/")
 
-    rendered = '({})'.format(', '.join(result))
+    rendered = "({})".format(", ".join(result))
 
     if signature.return_annotation is not inspect.Parameter.empty and type_comments:
         anno = format_annotation(signature.return_annotation)
-        rendered += ' -> {}'.format(anno)
+        rendered += " -> {}".format(anno)
 
     return rendered

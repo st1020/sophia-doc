@@ -18,18 +18,24 @@ class Builder(ABC):
         module: A ModuleNode object.
         docstring_style: The docstring style the module used, auto check by default.
     """
-    module: 'ModuleNode'
+
+    module: "ModuleNode"
     docstring_style: DocstringStyle
 
-    def __init__(self, module: 'ModuleNode', *, docstring_style: DocstringStyle = DocstringStyle.AUTO):
+    def __init__(
+        self,
+        module: "ModuleNode",
+        *,
+        docstring_style: DocstringStyle = DocstringStyle.AUTO,
+    ):
         self.module = module
         self.docstring_style = docstring_style
 
-    def _new_builder(self, module: 'ModuleNode') -> 'Builder':
+    def _new_builder(self, module: "ModuleNode") -> "Builder":
         """Get a new instance of Builder class, is used in write method."""
         return self.__class__(module, docstring_style=self.docstring_style)
 
-    def get_docstring(self, obj: 'DocNode') -> 'Docstring':
+    def get_docstring(self, obj: "DocNode") -> "Docstring":
         """Get the Docstring object of a DocNode object.
 
         Args:
@@ -62,7 +68,9 @@ class Builder(ABC):
         filepath.parent.mkdir(parents=True, exist_ok=True)
         if not self.module.is_namespace:
             filepath.touch(exist_ok=overwrite)
-            with open(filepath, 'w', encoding='utf-8') as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 f.write(self.text())
         for submodule in self.module.submodules:
-            self._new_builder(submodule).write(output_dir, overwrite=overwrite, **kwargs)
+            self._new_builder(submodule).write(
+                output_dir, overwrite=overwrite, **kwargs
+            )

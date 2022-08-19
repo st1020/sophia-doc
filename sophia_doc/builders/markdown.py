@@ -4,13 +4,14 @@ from pathlib import Path
 from textwrap import indent
 from typing import Dict, List, Tuple, Optional
 
-from sophia_doc import DocNode, ModuleNode, ClassNode, FunctionNode, DataNode
-from sophia_doc.builders import Builder
-from sophia_doc.utils import format_annotation, format_signature
 from docstring_parser import Docstring, DocstringParam, DocstringStyle
 
+from sophia_doc.builders import Builder
+from sophia_doc.utils import format_signature, format_annotation
+from sophia_doc import DocNode, DataNode, ClassNode, ModuleNode, FunctionNode
 
-def get_description(docstring: 'Docstring') -> List[str]:
+
+def get_description(docstring: "Docstring") -> List[str]:
     """Get description form a Docstring object.
 
     Args:
@@ -27,7 +28,9 @@ def get_description(docstring: 'Docstring') -> List[str]:
     return result
 
 
-def parser_param(name: str, annotation: Optional[str], description: Optional[str]) -> str:
+def parser_param(
+    name: str, annotation: Optional[str], description: Optional[str]
+) -> str:
     """Get formatted string of parameter.
 
     Args:
@@ -38,15 +41,15 @@ def parser_param(name: str, annotation: Optional[str], description: Optional[str
     Returns:
         Formatted string of parameter.
     """
-    result = f'- {Markdown.bold(name)}'
+    result = f"- {Markdown.bold(name)}"
     if annotation:
-        result += f' ({Markdown.italic(annotation)})'
+        result += f" ({Markdown.italic(annotation)})"
     if description:
-        result += f' - {description}'
+        result += f" - {description}"
     return result
 
 
-def parser_docstring_param(param: 'DocstringParam') -> str:
+def parser_docstring_param(param: "DocstringParam") -> str:
     """Get formatted string of parameter from a DocstringParam object.
 
     Args:
@@ -63,23 +66,23 @@ class Markdown:
 
     @staticmethod
     def indent(text: str, level: int = 1) -> str:
-        return indent(text, prefix=' ' * (level * 2))
+        return indent(text, prefix=" " * (level * 2))
 
     @staticmethod
     def italic(text: str) -> str:
-        return f'*{text}*'
+        return f"*{text}*"
 
     @staticmethod
     def bold(text: str) -> str:
-        return f'**{text}**'
+        return f"**{text}**"
 
     @staticmethod
     def title(text: str, level: int = 1) -> str:
-        return '#' * level + ' ' + text
+        return "#" * level + " " + text
 
     @staticmethod
     def inline_code(text: str) -> str:
-        return f'`{text}`'
+        return f"`{text}`"
 
 
 class MarkdownBuilder(Builder):
@@ -87,36 +90,56 @@ class MarkdownBuilder(Builder):
     Markdown Builder.
 
     Attributes:
-        anchor_extend: If true will add anchor extend to title, like # Your title {#your-custom-id}
+        anchor_extend: If true will add anchor extend to title,
+            like # Your title {#your-custom-id}
         ignore_data: If true will ignore data in Markdown text.
     """
+
     anchor_extend: bool
     ignore_data: bool
 
-    def __init__(self, module: 'ModuleNode', *,
-                 docstring_style: DocstringStyle = DocstringStyle.AUTO,
-                 anchor_extend: bool = False,
-                 ignore_data: bool = False):
+    def __init__(
+        self,
+        module: "ModuleNode",
+        *,
+        docstring_style: DocstringStyle = DocstringStyle.AUTO,
+        anchor_extend: bool = False,
+        ignore_data: bool = False,
+    ):
         super().__init__(module, docstring_style=docstring_style)
         self.anchor_extend = anchor_extend
         self.ignore_data = ignore_data
 
-    def _new_builder(self, module: 'ModuleNode') -> 'Builder':
-        return self.__class__(module,
-                              docstring_style=self.docstring_style,
-                              anchor_extend=self.anchor_extend,
-                              ignore_data=self.ignore_data)
+    def _new_builder(self, module: "ModuleNode") -> "Builder":
+        return self.__class__(
+            module,
+            docstring_style=self.docstring_style,
+            anchor_extend=self.anchor_extend,
+            ignore_data=self.ignore_data,
+        )
 
-    def get_path(self, exclude_module_name: bool = False, init_file_name: str = 'index.md', **kwargs) -> Path:
+    def get_path(
+        self,
+        exclude_module_name: bool = False,
+        init_file_name: str = "index.md",
+        **kwargs,
+    ) -> Path:
         """Get the path to write file.
 
         Args:
-            exclude_module_name: If true will write file to path which exclude module name,
-                like change output path form `./doc/sophia_doc/index.md` to `./doc/index.md`.
-            init_file_name: The name of Markdown file from __init__.py, `index.md` by default.
+            exclude_module_name: If true will write file to path
+                which exclude module name, like change output path
+                form `./doc/sophia_doc/index.md` to `./doc/index.md`.
+            init_file_name: The name of Markdown file
+                from __init__.py, `index.md` by default.
         """
-        path = Path(*self.module.name.split('.')[(1 if exclude_module_name else 0):])
-        return path / init_file_name if self.module.is_package else path.with_suffix('.md')
+        if exclude_module_name:
+            path = Path(*self.module.name.split(".")[1:])
+        else:
+            path = Path(*self.module.name.split(".")[0:])
+        return (
+            path / init_file_name if self.module.is_package else path.with_suffix(".md")
+        )
 
     def text(self) -> str:
         result: List[str] = list()
@@ -128,13 +151,13 @@ class MarkdownBuilder(Builder):
         for node in self.module.attributes:
             result.append(self.build_doc(node))
 
-        return self._build_str(result).replace('<', r'\<').replace('>', r'\<')
+        return self._build_str(result).replace("<", r"\<").replace(">", r"\<")
 
     @staticmethod
     def _build_str(str_list: List[str]) -> str:
-        return '\n\n'.join(filter(lambda x: x, str_list))
+        return "\n\n".join(filter(lambda x: x, str_list))
 
-    def build_doc(self, node: 'DocNode', *, level: int = 1, **kwargs) -> str:
+    def build_doc(self, node: "DocNode", *, level: int = 1, **kwargs) -> str:
         """Build markdown string from a DocNode.
 
         Args:
@@ -151,8 +174,8 @@ class MarkdownBuilder(Builder):
         elif isinstance(node, DataNode):
             return self.build_data(node, level=level, **kwargs)
 
-    def _extend_title(self, title: str, node: 'DocNode') -> str:
-        return title + ' {#' + node.qualname + '}' if self.anchor_extend else title
+    def _extend_title(self, title: str, node: "DocNode") -> str:
+        return title + " {#" + node.qualname + "}" if self.anchor_extend else title
 
     def build_class(self, node: ClassNode, *, level: int = 1) -> str:
         """Build markdown string from a ClassNode.
@@ -166,182 +189,263 @@ class MarkdownBuilder(Builder):
         """
         _kind = list()
         if node.is_abstract:
-            _kind.append('abstract')
+            _kind.append("abstract")
         if isinstance(node.obj, Exception):
-            _kind.append('exception')
+            _kind.append("exception")
         else:
-            _kind.append('class')
-        _kind = ' '.join(_kind)
+            _kind.append("class")
+        _kind = " ".join(_kind)
 
         init = None
         for attr in node.attributes:
-            if attr.name == '__init__':
+            if attr.name == "__init__":
                 assert isinstance(attr.node, FunctionNode)
                 init = attr.node
 
         result: List[str] = list()
-        title = Markdown.title(Markdown.italic(_kind) + ' ' + Markdown.inline_code(node.name), level + 1)
+        title = Markdown.title(
+            Markdown.italic(_kind) + " " + Markdown.inline_code(node.name), level + 1
+        )
         if init and init.signature:
             title += format_signature(init.signature)
         else:
-            warnings.warn(f'Can not get __init__ method signature of class {node.name}')
+            warnings.warn(f"Can not get __init__ method signature of class {node.name}")
         result.append(self._extend_title(title, node))
 
-        result.append('Bases: ' + ', '.join(map(Markdown.inline_code, map(format_annotation, node.bases))))
+        result.append(
+            "Bases: "
+            + ", ".join(map(Markdown.inline_code, map(format_annotation, node.bases)))
+        )
 
         docstring = self.get_docstring(node)
         result.extend(get_description(docstring))
 
         if init and init.signature:
-            result.extend(self._build_argument(init, self.get_docstring(init), ignore_first_arg=True))
+            result.extend(
+                self._build_argument(
+                    init, self.get_docstring(init), ignore_first_arg=True
+                )
+            )
 
         if docstring.params or node.annotations:
-            result.append('- **Attributes**')
+            result.append("- **Attributes**")
 
-            parma_dict: Dict[str, Tuple['inspect.Parameter', Optional['DocstringParam']]] = {}
+            parma_dict: Dict[
+                str, Tuple["inspect.Parameter", Optional["DocstringParam"]]
+            ] = {}
             if node.annotations:
                 parma_dict = {
                     key: (annotation, None)
                     for key, annotation in node.annotations.items()
-                    if not key.startswith('_')
+                    if not key.startswith("_")
                 }
 
             if docstring.params:
                 for param_doc in docstring.params:
                     annotation, _ = parma_dict.get(param_doc.arg_name, (None, None))
                     if param_doc.type_name is None and annotation:
-                        param_doc.type_name = format_annotation(annotation, base_module=node.module.obj)
+                        param_doc.type_name = format_annotation(
+                            annotation, base_module=node.module.obj
+                        )
                     parma_dict[param_doc.arg_name] = (annotation, param_doc)
 
             for name, (annotation, param_doc) in parma_dict.items():
                 if param_doc is None:
-                    result.append(Markdown.indent(parser_param(
-                        name, format_annotation(annotation, base_module=node.module.obj), None
-                    )))
+                    result.append(
+                        Markdown.indent(
+                            parser_param(
+                                name,
+                                format_annotation(
+                                    annotation, base_module=node.module.obj
+                                ),
+                                None,
+                            )
+                        )
+                    )
                 else:
                     result.append(Markdown.indent(parser_docstring_param(param_doc)))
 
         if docstring.examples:
-            result.append('- **Examples**')
+            result.append("- **Examples**")
             result.append(Markdown.indent(docstring.examples[0].description))
 
         for name, kind, node in node.attributes:
-            if name == '__init__':
+            if name == "__init__":
                 continue
-            result.append(self.build_doc(node, level=level + 1, kind=kind,
-                                         ignore_first_arg=kind == 'method' or kind == 'class method'))
+            result.append(
+                self.build_doc(
+                    node,
+                    level=level + 1,
+                    kind=kind,
+                    ignore_first_arg=kind == "method" or kind == "class method",
+                )
+            )
 
         return self._build_str(result)
 
     @staticmethod
-    def _build_argument(node: FunctionNode, docstring: 'Docstring', *, ignore_first_arg: bool = False) -> List[str]:
+    def _build_argument(
+        node: FunctionNode, docstring: "Docstring", *, ignore_first_arg: bool = False
+    ) -> List[str]:
         result = []
         if docstring.params or (node.signature and node.signature.parameters):
-            parma_dict: Dict[str, Tuple['inspect.Parameter', Optional['DocstringParam']]] = {}
+            parma_dict: Dict[
+                str, Tuple["inspect.Parameter", Optional["DocstringParam"]]
+            ] = {}
             if node.signature and node.signature.parameters:
                 parma_dict = {
                     key: (param, None)
                     for key, param in node.signature.parameters.items()
-                    if not (param.kind == param.VAR_POSITIONAL or param.kind == param.VAR_KEYWORD)
+                    if not (
+                        param.kind == param.VAR_POSITIONAL
+                        or param.kind == param.VAR_KEYWORD
+                    )
                 }
 
             if docstring.params:
                 for param_doc in docstring.params:
-                    if param_doc.arg_name not in parma_dict and (node.signature and node.signature.parameters):
-                        if not param_doc.arg_name.startswith('*'):
-                            warnings.warn(f'The argument "{param_doc.arg_name}" can not find in function signature.')
+                    if param_doc.arg_name not in parma_dict and (
+                        node.signature and node.signature.parameters
+                    ):
+                        if not param_doc.arg_name.startswith("*"):
+                            warnings.warn(
+                                f'The argument "{param_doc.arg_name}" '
+                                f"can not find in function signature."
+                            )
                     param, _ = parma_dict.get(param_doc.arg_name, (None, None))
                     if param_doc.type_name is None and param:
-                        param_doc.type_name = format_annotation(param.annotation, base_module=node.module.obj)
+                        param_doc.type_name = format_annotation(
+                            param.annotation, base_module=node.module.obj
+                        )
                     parma_dict[param_doc.arg_name] = (param, param_doc)
 
             if ignore_first_arg and parma_dict:
                 parma_dict.pop(list(parma_dict.keys())[0])
 
             if parma_dict:
-                result.append('- **Arguments**')
+                result.append("- **Arguments**")
 
             for param, param_doc in parma_dict.values():
                 if param_doc is None:
-                    result.append(Markdown.indent(parser_param(
-                        param.name, format_annotation(param.annotation, base_module=node.module.obj), None
-                    )))
+                    result.append(
+                        Markdown.indent(
+                            parser_param(
+                                param.name,
+                                format_annotation(
+                                    param.annotation, base_module=node.module.obj
+                                ),
+                                None,
+                            )
+                        )
+                    )
                 else:
                     result.append(Markdown.indent(parser_docstring_param(param_doc)))
 
         return result
 
-    def build_function(self, node: FunctionNode, *, level: int = 1, kind: str = 'function',
-                       ignore_first_arg: bool = False, **kwargs) -> str:  # noqa
+    def build_function(
+        self,
+        node: FunctionNode,
+        *,
+        level: int = 1,
+        kind: str = "function",
+        ignore_first_arg: bool = False,
+        **kwargs,  # noqa
+    ) -> str:
         """Build markdown string from a FunctionNode.
 
         Args:
             node: A FunctionNode.
             level: The title level.
             kind: The function kind, like 'function', 'method', 'class method'.
-            ignore_first_arg: If True the first argument of the function will be ignored.
+            ignore_first_arg: If True the first argument of the function
+                will be ignored.
 
         Returns:
             A markdown string.
         """
         if not node.signature:
-            warnings.warn(f'The {node.qualname} ({node.obj}) not have signature, ignored.')
-            return ''
+            warnings.warn(
+                f"The {node.qualname} ({node.obj}) not have signature, ignored."
+            )
+            return ""
 
         _kind = list()
         if node.is_async:
-            _kind.append('async')
+            _kind.append("async")
         if node.is_lambda_func:
-            _kind.append('lambda')
+            _kind.append("lambda")
         _kind.append(kind)
-        _kind = ' '.join(_kind)
+        _kind = " ".join(_kind)
 
         result: List[str] = list()
-        result.append(self._extend_title(
-            Markdown.title(
-                Markdown.italic(_kind) + ' ' + Markdown.inline_code('{name}{signature}'.format(
-                    name=node.name,
-                    signature=format_signature(node.signature)
-                )),
-                level + 1),
-            node
-        ))
+        result.append(
+            self._extend_title(
+                Markdown.title(
+                    Markdown.italic(_kind)
+                    + " "
+                    + Markdown.inline_code(
+                        "{name}{signature}".format(
+                            name=node.name, signature=format_signature(node.signature)
+                        )
+                    ),
+                    level + 1,
+                ),
+                node,
+            )
+        )
 
         docstring = self.get_docstring(node)
         result.extend(get_description(docstring))
 
-        result.extend(self._build_argument(node, docstring, ignore_first_arg=ignore_first_arg))
+        result.extend(
+            self._build_argument(node, docstring, ignore_first_arg=ignore_first_arg)
+        )
 
-        if docstring.returns or (node.signature and node.signature.return_annotation is not inspect.Signature.empty):
-            result.append('- **Returns**')
+        if docstring.returns or (
+            node.signature
+            and node.signature.return_annotation is not inspect.Signature.empty
+        ):
+            result.append("- **Returns**")
 
-            type_name = ''
+            type_name = ""
             if docstring.returns is not None and docstring.returns.type_name:
                 type_name = docstring.returns.type_name
-            elif node.signature is not None and node.signature.return_annotation is not inspect.Signature.empty:
-                type_name = format_annotation(node.signature.return_annotation, base_module=node.module.obj)
+            elif (
+                node.signature is not None
+                and node.signature.return_annotation is not inspect.Signature.empty
+            ):
+                type_name = format_annotation(
+                    node.signature.return_annotation, base_module=node.module.obj
+                )
 
             if type_name:
-                result.append(Markdown.indent(f'Type: {Markdown.italic(type_name)}'))
+                result.append(Markdown.indent(f"Type: {Markdown.italic(type_name)}"))
 
             if docstring.returns and docstring.returns.description:
                 result.append(Markdown.indent(docstring.returns.description))
 
         if docstring.raises:
-            result.append('- **Raises**')
+            result.append("- **Raises**")
             for raise_doc in docstring.raises:
-                result.append(Markdown.indent('- {type_name} - {description}'.format(
-                    type_name=Markdown.bold(raise_doc.type_name),
-                    description=raise_doc.description
-                )))
+                result.append(
+                    Markdown.indent(
+                        "- {type_name} - {description}".format(
+                            type_name=Markdown.bold(raise_doc.type_name),
+                            description=raise_doc.description,
+                        )
+                    )
+                )
 
         if docstring.examples:
-            result.append('- **Examples**')
+            result.append("- **Examples**")
             result.append(Markdown.indent(docstring.examples[0].description))
 
         return self._build_str(result)
 
-    def build_data(self, node: DataNode, *, level: int = 1, kind: str = 'data', **kwargs) -> str:  # noqa
+    def build_data(
+        self, node: DataNode, *, level: int = 1, kind: str = "data", **kwargs  # noqa
+    ) -> str:
         """Build markdown string from a DataNode.
 
         Args:
@@ -352,20 +456,30 @@ class MarkdownBuilder(Builder):
         Returns:
             A markdown string.
         """
-        if self.ignore_data and kind == 'data':
-            return ''
+        if self.ignore_data and kind == "data":
+            return ""
 
         result: List[str] = list()
-        result.append(self._extend_title(
-            Markdown.title(Markdown.italic(kind) + ' ' + Markdown.inline_code(node.name), level + 1),
-            node
-        ))
+        result.append(
+            self._extend_title(
+                Markdown.title(
+                    Markdown.italic(kind) + " " + Markdown.inline_code(node.name),
+                    level + 1,
+                ),
+                node,
+            )
+        )
 
-        if 'property' in kind and node.annotations.get('return', None):
-            result.append('Type: {type_name}'.format(
-                type_name=Markdown.italic(format_annotation(node.annotations['return'],
-                                                            base_module=node.module.obj))
-            ))
+        if "property" in kind and node.annotations.get("return", None):
+            result.append(
+                "Type: {type_name}".format(
+                    type_name=Markdown.italic(
+                        format_annotation(
+                            node.annotations["return"], base_module=node.module.obj
+                        )
+                    )
+                )
+            )
 
         docstring = self.get_docstring(node)
         result.extend(get_description(docstring))
