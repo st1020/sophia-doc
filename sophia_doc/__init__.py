@@ -398,9 +398,15 @@ class ClassNode(DocNode[type]):
         ]
 
     @cached_property
-    def bases(self) -> Tuple[type, ...]:
-        """__bases__ of this class."""
-        return self.obj.__bases__
+    def bases(self) -> Tuple[str, ...]:
+        """Base class names of this class."""
+        return tuple(
+            map(
+                lambda x: (x.__module__ + "." if x.__module__ != "builtins" else "")
+                + x.__qualname__,
+                self.obj.__bases__,
+            )
+        )
 
     @cached_property
     def mro(self) -> Tuple[type, ...]:
