@@ -7,7 +7,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-docstring-parser = "^0.13"
+docstring-parser = "^0.14"
 
 [tool.poetry.scripts]
 sophia-doc = 'sophia_doc.__main__:cli'
