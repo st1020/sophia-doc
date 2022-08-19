@@ -151,7 +151,7 @@ class MarkdownBuilder(Builder):
         for node in self.module.attributes:
             result.append(self.build_doc(node))
 
-        return self._build_str(result).replace("<", r"\<").replace(">", r"\<")
+        return self._build_str(result).replace("<", r"\<").replace(">", r"\>")
 
     @staticmethod
     def _build_str(str_list: List[str]) -> str:
