@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sophia-doc"
-version = "0.1.1"
+version = "0.1.2"
 description = "A python package to automatically generate API documents for Python modules."
 authors = ["st1020 <stone_1020@qq.com>"]
 license = "MIT"
@@ -8,9 +8,6 @@ readme = "README.md"
 keywords = ["sophia-doc", "documentation", "doc", "pydoc", "markdown"]
 classifiers = [
   "Development Status :: 3 - Alpha",
-  "Framework :: AsyncIO",
-  "Framework :: Robot Framework",
-  "Framework :: Robot Framework :: Library",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
