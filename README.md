@@ -11,6 +11,12 @@ It's a lot like sphinx, but it only focuses on generating markdown documentation
 It does not support PEP 224 attribute docstrings, because the PEP was rejected, and have to use ast module to support
 it, which brings additional complexity to this project.
 
+# Install
+
+```shell
+pip install sophia-doc
+```
+
 # Quickstart
 
 ```shell
