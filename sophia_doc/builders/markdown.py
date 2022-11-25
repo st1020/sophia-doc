@@ -290,25 +290,22 @@ class MarkdownBuilder(Builder):
                 str, Tuple["inspect.Parameter", Optional["DocstringParam"]]
             ] = {}
             if node.signature and node.signature.parameters:
-                parma_dict = {
-                    key: (param, None)
-                    for key, param in node.signature.parameters.items()
-                    if not (
-                        param.kind == param.VAR_POSITIONAL
-                        or param.kind == param.VAR_KEYWORD
-                    )
-                }
+                for key, param in node.signature.parameters.items():
+                    if param.kind == param.VAR_POSITIONAL:
+                        key = "*" + key
+                    elif param.kind == param.VAR_KEYWORD:
+                        key = "**" + key
+                    parma_dict[key] = (param, None)
 
             if docstring.params:
                 for param_doc in docstring.params:
                     if param_doc.arg_name not in parma_dict and (
                         node.signature and node.signature.parameters
                     ):
-                        if not param_doc.arg_name.startswith("*"):
-                            warnings.warn(
-                                f'The argument "{param_doc.arg_name}" '
-                                f"can not find in function signature."
-                            )
+                        warnings.warn(
+                            f'The argument "{param_doc.arg_name}" '
+                            f"can not find in function signature."
+                        )
                     param, _ = parma_dict.get(param_doc.arg_name, (None, None))
                     if param_doc.type_name is None and param:
                         param_doc.type_name = format_annotation(
