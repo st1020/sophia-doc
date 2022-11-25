@@ -7,10 +7,10 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-docstring-parser = "^0.14"
+docstring-parser = "^0.15"
 
 [tool.poetry.dev-dependencies]
-black = "^22.3.0"
+black = "^22.10.0"
 isort = "^5.10.0"
 
 [tool.poetry.scripts]
