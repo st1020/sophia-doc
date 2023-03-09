@@ -46,9 +46,9 @@ def format_annotation(annotation: Any, base_module: Optional[ModuleType] = None)
         return annotation
     # use regex delete 'ForwardRef' from annotation
     return re.sub(
-        r"\bForwardRef\((?P<quot>[\'\"])(?P<string>.*?)(?P=quot)\)",
-        r"\g<string>",
-        inspect.formatannotation(annotation, base_module),
+        r"\bForwardRef\((?P<quot>[\'\"])(?P<string>.*?)(?P=quot)\)",  # type: ignore
+        r"\g<string>",  # type: ignore
+        inspect.formatannotation(annotation, base_module),  # type: ignore
     )
 
 

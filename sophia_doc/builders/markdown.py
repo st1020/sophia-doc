@@ -11,7 +11,7 @@ from sophia_doc.utils import format_signature, format_annotation
 from sophia_doc import DocNode, DataNode, ClassNode, ModuleNode, FunctionNode
 
 
-def get_description(docstring: "Docstring") -> List[str]:
+def get_description(docstring: Docstring) -> List[str]:
     """Get description form a Docstring object.
 
     Args:
@@ -49,7 +49,7 @@ def parser_param(
     return result
 
 
-def parser_docstring_param(param: "DocstringParam") -> str:
+def parser_docstring_param(param: DocstringParam) -> str:
     """Get formatted string of parameter from a DocstringParam object.
 
     Args:
@@ -100,7 +100,7 @@ class MarkdownBuilder(Builder):
 
     def __init__(
         self,
-        module: "ModuleNode",
+        module: ModuleNode,
         *,
         docstring_style: DocstringStyle = DocstringStyle.AUTO,
         anchor_extend: bool = False,
@@ -110,7 +110,7 @@ class MarkdownBuilder(Builder):
         self.anchor_extend = anchor_extend
         self.ignore_data = ignore_data
 
-    def _new_builder(self, module: "ModuleNode") -> "Builder":
+    def _new_builder(self, module: ModuleNode) -> "Builder":
         return self.__class__(
             module,
             docstring_style=self.docstring_style,
@@ -157,7 +157,7 @@ class MarkdownBuilder(Builder):
     def _build_str(str_list: List[str]) -> str:
         return "\n\n".join(filter(lambda x: x, str_list))
 
-    def build_doc(self, node: "DocNode", *, level: int = 1, **kwargs) -> str:
+    def build_doc(self, node: DocNode, *, level: int = 1, **kwargs) -> str:
         """Build markdown string from a DocNode.
 
         Args:
@@ -173,8 +173,10 @@ class MarkdownBuilder(Builder):
             return self.build_function(node, level=level, **kwargs)
         elif isinstance(node, DataNode):
             return self.build_data(node, level=level, **kwargs)
+        else:
+            raise ValueError()
 
-    def _extend_title(self, title: str, node: "DocNode") -> str:
+    def _extend_title(self, title: str, node: DocNode) -> str:
         return title + " {#" + node.qualname + "}" if self.anchor_extend else title
 
     def build_class(self, node: ClassNode, *, level: int = 1) -> str:
@@ -228,7 +230,7 @@ class MarkdownBuilder(Builder):
             result.append("- **Attributes**")
 
             parma_dict: Dict[
-                str, Tuple["inspect.Parameter", Optional["DocstringParam"]]
+                str, Tuple[inspect.Parameter, Optional[DocstringParam]]
             ] = {}
             if node.annotations:
                 parma_dict = {
@@ -244,7 +246,10 @@ class MarkdownBuilder(Builder):
                         param_doc.type_name = format_annotation(
                             annotation, base_module=node.module.obj
                         )
-                    parma_dict[param_doc.arg_name] = (annotation, param_doc)
+                    parma_dict[param_doc.arg_name] = (  # type:ignore
+                        annotation,
+                        param_doc,
+                    )
 
             for name, (annotation, param_doc) in parma_dict.items():
                 if param_doc is None:
@@ -264,14 +269,14 @@ class MarkdownBuilder(Builder):
 
         if docstring.examples:
             result.append("- **Examples**")
-            result.append(Markdown.indent(docstring.examples[0].description))
+            result.append(Markdown.indent(docstring.examples[0].description or ""))
 
-        for name, kind, node in node.attributes:
+        for name, kind, node_ in node.attributes:
             if name == "__init__":
                 continue
             result.append(
                 self.build_doc(
-                    node,
+                    node_,
                     level=level + 1,
                     kind=kind,
                     ignore_first_arg=kind == "method" or kind == "class method",
@@ -282,12 +287,12 @@ class MarkdownBuilder(Builder):
 
     @staticmethod
     def _build_argument(
-        node: FunctionNode, docstring: "Docstring", *, ignore_first_arg: bool = False
+        node: FunctionNode, docstring: Docstring, *, ignore_first_arg: bool = False
     ) -> List[str]:
         result = []
         if docstring.params or (node.signature and node.signature.parameters):
             parma_dict: Dict[
-                str, Tuple["inspect.Parameter", Optional["DocstringParam"]]
+                str, Tuple[inspect.Parameter, Optional[DocstringParam]]
             ] = {}
             if node.signature and node.signature.parameters:
                 for key, param in node.signature.parameters.items():
@@ -311,7 +316,7 @@ class MarkdownBuilder(Builder):
                         param_doc.type_name = format_annotation(
                             param.annotation, base_module=node.module.obj
                         )
-                    parma_dict[param_doc.arg_name] = (param, param_doc)
+                    parma_dict[param_doc.arg_name] = (param, param_doc)  # type:ignore
 
             if ignore_first_arg and parma_dict:
                 parma_dict.pop(list(parma_dict.keys())[0])
@@ -344,7 +349,7 @@ class MarkdownBuilder(Builder):
         level: int = 1,
         kind: str = "function",
         ignore_first_arg: bool = False,
-        **kwargs,  # noqa
+        **kwargs,
     ) -> str:
         """Build markdown string from a FunctionNode.
 
@@ -425,7 +430,7 @@ class MarkdownBuilder(Builder):
                 result.append(
                     Markdown.indent(
                         "- {type_name} - {description}".format(
-                            type_name=Markdown.bold(raise_doc.type_name),
+                            type_name=Markdown.bold(raise_doc.type_name or ""),
                             description=raise_doc.description,
                         )
                     )
@@ -433,12 +438,12 @@ class MarkdownBuilder(Builder):
 
         if docstring.examples:
             result.append("- **Examples**")
-            result.append(Markdown.indent(docstring.examples[0].description))
+            result.append(Markdown.indent(docstring.examples[0].description or ""))
 
         return self._build_str(result)
 
     def build_data(
-        self, node: DataNode, *, level: int = 1, kind: str = "data", **kwargs  # noqa
+        self, node: DataNode, *, level: int = 1, kind: str = "data", **kwargs
     ) -> str:
         """Build markdown string from a DataNode.
 

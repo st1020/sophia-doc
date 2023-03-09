@@ -24,7 +24,6 @@ else:
             help=None,
             metavar=None,
         ):
-
             _option_strings = []
             for option_string in option_strings:
                 _option_strings.append(option_string)
@@ -58,7 +57,7 @@ else:
 
 parser = argparse.ArgumentParser(
     description="Sophia_doc is a python package to automatically "
-                "generate API documents for Python modules",
+    "generate API documents for Python modules",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
 parser.add_argument("module", type=str, help="Python module names.")

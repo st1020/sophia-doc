@@ -41,7 +41,7 @@ def _find_class(func: Any) -> Optional[type]:
 def _find_doc(obj: Any) -> Optional[str]:
     # cut from pydoc
     if inspect.ismethod(obj):
-        name = obj.__func__.__name__
+        name = obj.__func__.__name__  # type: ignore
         self = obj.__self__
         if (
             inspect.isclass(self)
@@ -67,13 +67,13 @@ def _find_doc(obj: Any) -> Optional[str]:
     # Should be tested before isdatadescriptor().
     elif isinstance(obj, property):
         func = obj.fget
-        name = func.__name__
+        name = func.__name__  # type: ignore
         cls = _find_class(func)
         if cls is None or getattr(cls, name) is not obj:
             return None
     elif inspect.ismethoddescriptor(obj) or inspect.isdatadescriptor(obj):
-        name = obj.__name__
-        cls = obj.__objclass__
+        name = obj.__name__  # type: ignore
+        cls = obj.__objclass__  # type: ignore
         if getattr(cls, name) is not obj:
             return None
         if inspect.ismemberdescriptor(obj):
@@ -82,7 +82,7 @@ def _find_doc(obj: Any) -> Optional[str]:
                 return slots[name]
     else:
         return None
-    for base in cls.__mro__:
+    for base in cls.__mro__:  # type: ignore
         try:
             doc = _get_own_doc(getattr(base, name))
         except AttributeError:
@@ -203,9 +203,7 @@ class DocNode(Generic[_T]):
 
     @cached_property
     def qualname(self) -> str:
-        if hasattr(self.obj, "__qualname__"):
-            return self.obj.__qualname__
-        return self._qualname
+        return getattr(self.obj, "__qualname__", self._qualname)
 
     @cached_property
     def realname(self) -> str:
@@ -241,7 +239,7 @@ class DocNode(Generic[_T]):
             if inspect.isclass(obj):
                 return ClassNode(obj, name, qualname, module)
             if inspect.isroutine(obj):
-                return FunctionNode(obj, name, qualname, module)
+                return FunctionNode(obj, name, qualname, module)  # type: ignore
         except AttributeError:
             pass
         if isdata(obj):
@@ -373,7 +371,7 @@ class ClassNode(DocNode[type]):
                         kind = "readonly property"
                 # get original function from class method or static method
                 if kind == "class method" or kind == "static method":
-                    value = value.__func__
+                    value = value.__func__  # type: ignore
                 # functools.cached_property needs special handling
                 if isinstance(value, cached_property):
                     kind = "cached property"
