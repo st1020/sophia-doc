@@ -367,8 +367,8 @@ class ClassNode(DocNode[type]):
                     if name in getattr(self.obj, "__slots__", []):
                         continue
                     kind = "data descriptor"
-                    if isinstance(value, property) and value.fset is None:
-                        kind = "readonly property"
+                    if isinstance(value, property):
+                        kind = "readonly property" if value.fset is None else "property"
                 # get original function from class method or static method
                 if kind == "class method" or kind == "static method":
                     value = value.__func__  # type: ignore
