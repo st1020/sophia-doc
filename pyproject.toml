@@ -1,6 +1,6 @@
 [project]
 name = "sophia-doc"
-version = "0.1.3"
+version = "0.1.4"
 description = "A python package to automatically generate API documents for Python modules."
 authors = [{ name = "st1020", email = "stone_1020@qq.com" }]
 license = { text = "MIT" }
