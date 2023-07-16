@@ -1,9 +1,9 @@
 """Utils of sophia_doc."""
-import re
-import inspect
-import warnings
 import importlib
+import inspect
+import re
 import traceback
+import warnings
 from types import ModuleType
 from typing import Any, Optional
 
@@ -69,13 +69,13 @@ def format_parameter(parameter: inspect.Parameter, type_comments: bool = False) 
 
     # Add annotation and default value
     if parameter.annotation is not inspect.Parameter.empty and type_comments:
-        formatted = "{}: {}".format(formatted, format_annotation(parameter.annotation))
+        formatted = f"{formatted}: {format_annotation(parameter.annotation)}"
 
     if parameter.default is not inspect.Parameter.empty:
         if parameter.annotation is not inspect.Parameter.empty:
-            formatted = "{} = {}".format(formatted, repr(parameter.default))
+            formatted = f"{formatted} = {parameter.default!r}"
         else:
-            formatted = "{}={}".format(formatted, repr(parameter.default))
+            formatted = f"{formatted}={parameter.default!r}"
 
     if kind == inspect.Parameter.VAR_POSITIONAL:
         formatted = "*" + formatted
@@ -86,8 +86,7 @@ def format_parameter(parameter: inspect.Parameter, type_comments: bool = False) 
 
 
 def format_signature(signature: inspect.Signature, type_comments: bool = False) -> str:
-    """
-    Format inspect.Signature object, type comments is optional.
+    """Format inspect.Signature object, type comments is optional.
 
     Cut from inspect.Signature.__str__().
 
@@ -141,6 +140,6 @@ def format_signature(signature: inspect.Signature, type_comments: bool = False) 
 
     if signature.return_annotation is not inspect.Parameter.empty and type_comments:
         anno = format_annotation(signature.return_annotation)
-        rendered += " -> {}".format(anno)
+        rendered += f" -> {anno}"
 
     return rendered

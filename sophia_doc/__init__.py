@@ -45,7 +45,7 @@ def _find_doc(obj: Any) -> Optional[str]:
         self = obj.__self__
         if (
             inspect.isclass(self)
-            and getattr(getattr(self, name, None), "__func__") is obj.__func__
+            and getattr(self, name, None).__func__ is obj.__func__  # type: ignore
         ):
             # class method
             cls = self
@@ -93,9 +93,7 @@ def _find_doc(obj: Any) -> Optional[str]:
 
 
 def _get_own_doc(obj: Any) -> Optional[str]:
-    """Get the documentation string for an object
-    if it is not inherited from its class.
-    """
+    """Get the documentation string for an object if it is not inherited from its class."""
     # cut from pydoc
     try:
         doc = object.__getattribute__(obj, "__doc__")
@@ -164,8 +162,7 @@ def is_visible_name(name: str, _all: Optional[list] = None) -> bool:
     # only document that which the programmer exported in __all__
     if _all is not None:
         return name in _all
-    else:
-        return not name.startswith("_")
+    return not name.startswith("_")
 
 
 def get_annotations(obj: Any) -> Dict[str, Any]:
@@ -173,11 +170,9 @@ def get_annotations(obj: Any) -> Dict[str, Any]:
     # refs: https://docs.python.org/3/howto/annotations.html
     if sys.version_info >= (3, 10):
         return inspect.get_annotations(obj)
-    else:
-        if isinstance(obj, type):
-            return obj.__dict__.get("__annotations__", {})
-        else:
-            return getattr(obj, "__annotations__", {})
+    if isinstance(obj, type):
+        return obj.__dict__.get("__annotations__", {})
+    return getattr(obj, "__annotations__", {})
 
 
 class DocNode(Generic[_T]):
@@ -196,6 +191,7 @@ class DocNode(Generic[_T]):
     _qualname: str
 
     def __init__(self, obj: _T, name: str, qualname: str, module: "ModuleNode"):
+        """Init DocNode."""
         self.obj = obj
         self.name = name
         self._qualname = qualname
@@ -203,6 +199,7 @@ class DocNode(Generic[_T]):
 
     @cached_property
     def qualname(self) -> str:
+        """The qualname of this object."""
         return getattr(self.obj, "__qualname__", self._qualname)
 
     @cached_property
@@ -247,6 +244,7 @@ class DocNode(Generic[_T]):
         return OtherNode(obj, name, qualname, module)
 
     def __repr__(self):
+        """Return the repr of this DocNode."""
         return (
             f"{self.__class__.__name__}:{self.name} "
             f"obj:{self.obj} docstring:{self.docstring}"
@@ -257,6 +255,7 @@ class ModuleNode(DocNode[types.ModuleType]):
     """The class of module node."""
 
     def __init__(self, obj: types.ModuleType):
+        """Init ModuleNode."""
         super().__init__(obj, obj.__name__, "", self)
 
     @cached_property
@@ -265,9 +264,10 @@ class ModuleNode(DocNode[types.ModuleType]):
         _all = getattr(self.obj, "__all__", None)
         attributes = []
         for key, value in list(getattr(self.obj, "__dict__", {}).items()):
-            if (inspect.getmodule(value) or self.obj) is self.obj:
-                if is_visible_name(key, _all):
-                    attributes.append(self.from_obj(value, key, key, self))
+            if (inspect.getmodule(value) or self.obj) is self.obj and is_visible_name(
+                key, _all
+            ):
+                attributes.append(self.from_obj(value, key, key, self))
         return attributes
 
     @cached_property
@@ -276,7 +276,7 @@ class ModuleNode(DocNode[types.ModuleType]):
         submodules = []
         submodule_names = set()
         if self.is_package:
-            for importer, modname, ispkg in pkgutil.iter_modules(self.obj.__path__):
+            for _importer, modname, _ispkg in pkgutil.iter_modules(self.obj.__path__):
                 if not is_visible_name(modname):
                     continue
                 try:
@@ -285,7 +285,8 @@ class ModuleNode(DocNode[types.ModuleType]):
                     submodules.append(ModuleNode(module))
                 except ImportError:
                     warnings.warn(
-                        f"Can not import {modname}:\n{traceback.format_exc()}"
+                        f"Can not import {modname}:\n{traceback.format_exc()}",
+                        stacklevel=1,
                     )
 
         for key, value in inspect.getmembers(self.obj, inspect.ismodule):
@@ -350,6 +351,8 @@ class ClassNode(DocNode[type]):
     """The class of class node."""
 
     class Attribute(NamedTuple):
+        """The attribute of a class."""
+
         name: str
         kind: str
         node: DocNode
@@ -417,11 +420,8 @@ class ClassNode(DocNode[type]):
     def bases(self) -> Tuple[str, ...]:
         """Base class names of this class."""
         return tuple(
-            map(
-                lambda x: (x.__module__ + "." if x.__module__ != "builtins" else "")
-                + x.__qualname__,
-                self.obj.__bases__,
-            )
+            (x.__module__ + "." if x.__module__ != "builtins" else "") + x.__qualname__
+            for x in self.obj.__bases__
         )
 
     @cached_property
@@ -486,5 +486,3 @@ class DataNode(DocNode[_T]):
 
 class OtherNode(DocNode[_T]):
     """The class of other node."""
-
-    pass

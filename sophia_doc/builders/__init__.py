@@ -1,7 +1,7 @@
 """Builder is class to build ModuleNode to target formats."""
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING
-from abc import ABC, abstractmethod
 
 from docstring_parser import Docstring, DocstringStyle, parse
 
@@ -28,6 +28,12 @@ class Builder(ABC):
         *,
         docstring_style: DocstringStyle = DocstringStyle.AUTO,
     ):
+        """Init Builder.
+
+        Args:
+            module: The Module Node to build.
+            docstring_style: The docstring style. Defaults to DocstringStyle.AUTO.
+        """
         self.module = module
         self.docstring_style = docstring_style
 
@@ -63,6 +69,7 @@ class Builder(ABC):
             output_dir: The output directory.
             overwrite: If true will overwrite any file in output directory,
                 otherwise raise an Exception when file already exists.
+            **kwargs: Other args.
         """
         filepath = Path(output_dir).resolve() / self.get_path(**kwargs)
         filepath.parent.mkdir(parents=True, exist_ok=True)

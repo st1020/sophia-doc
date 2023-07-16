@@ -1,14 +1,15 @@
+"""The Markdown Builder."""
 import inspect
 import warnings
 from pathlib import Path
 from textwrap import indent
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
 from docstring_parser import Docstring, DocstringParam, DocstringStyle
 
+from sophia_doc import ClassNode, DataNode, DocNode, FunctionNode, ModuleNode
 from sophia_doc.builders import Builder
-from sophia_doc.utils import format_signature, format_annotation
-from sophia_doc import DocNode, DataNode, ClassNode, ModuleNode, FunctionNode
+from sophia_doc.utils import format_annotation, format_signature
 
 
 def get_description(docstring: Docstring) -> List[str]:
@@ -20,7 +21,7 @@ def get_description(docstring: Docstring) -> List[str]:
     Returns:
         A list of description string.
     """
-    result: List[str] = list()
+    result: List[str] = []
     if docstring.short_description:
         result.append(docstring.short_description)
     if docstring.long_description:
@@ -66,28 +67,32 @@ class Markdown:
 
     @staticmethod
     def indent(text: str, level: int = 1) -> str:
+        """Indent."""
         return indent(text, prefix=" " * (level * 2))
 
     @staticmethod
     def italic(text: str) -> str:
+        """Italic."""
         return f"*{text}*"
 
     @staticmethod
     def bold(text: str) -> str:
+        """Bold."""
         return f"**{text}**"
 
     @staticmethod
     def title(text: str, level: int = 1) -> str:
+        """Title."""
         return "#" * level + " " + text
 
     @staticmethod
     def inline_code(text: str) -> str:
+        """Inline Code."""
         return f"`{text}`"
 
 
 class MarkdownBuilder(Builder):
-    """
-    Markdown Builder.
+    """Markdown Builder.
 
     Attributes:
         anchor_extend: If true will add anchor extend to title,
@@ -106,6 +111,7 @@ class MarkdownBuilder(Builder):
         anchor_extend: bool = False,
         ignore_data: bool = False,
     ):
+        """Init Markdown Builder."""
         super().__init__(module, docstring_style=docstring_style)
         self.anchor_extend = anchor_extend
         self.ignore_data = ignore_data
@@ -122,7 +128,7 @@ class MarkdownBuilder(Builder):
         self,
         exclude_module_name: bool = False,
         init_file_name: str = "index.md",
-        **kwargs,
+        **kwargs,  # noqa: ARG002
     ) -> Path:
         """Get the path to write file.
 
@@ -132,6 +138,7 @@ class MarkdownBuilder(Builder):
                 form `./doc/sophia_doc/index.md` to `./doc/index.md`.
             init_file_name: The name of Markdown file
                 from __init__.py, `index.md` by default.
+            **kwargs: Other args.
         """
         if exclude_module_name:
             path = Path(*self.module.name.split(".")[1:])
@@ -142,7 +149,8 @@ class MarkdownBuilder(Builder):
         )
 
     def text(self) -> str:
-        result: List[str] = list()
+        """Get string of current module documentation."""
+        result: List[str] = []
         result.append(Markdown.title(self.module.name, 1))
 
         docstring = self.get_docstring(self.module)
@@ -163,18 +171,18 @@ class MarkdownBuilder(Builder):
         Args:
             node: A DocNode.
             level: The title level.
+            **kwargs: Other args.
 
         Returns:
             A markdown string.
         """
         if isinstance(node, ClassNode):
             return self.build_class(node, level=level)
-        elif isinstance(node, FunctionNode):
+        if isinstance(node, FunctionNode):
             return self.build_function(node, level=level, **kwargs)
-        elif isinstance(node, DataNode):
+        if isinstance(node, DataNode):
             return self.build_data(node, level=level, **kwargs)
-        else:
-            raise ValueError()
+        raise ValueError
 
     def _extend_title(self, title: str, node: DocNode) -> str:
         return title + " {#" + node.qualname + "}" if self.anchor_extend else title
@@ -189,7 +197,7 @@ class MarkdownBuilder(Builder):
         Returns:
             A markdown string.
         """
-        _kind = list()
+        _kind = []
         if node.is_abstract:
             _kind.append("abstract")
         if isinstance(node.obj, Exception):
@@ -204,14 +212,17 @@ class MarkdownBuilder(Builder):
                 assert isinstance(attr.node, FunctionNode)
                 init = attr.node
 
-        result: List[str] = list()
+        result: List[str] = []
         title = Markdown.title(
             Markdown.italic(_kind) + " " + Markdown.inline_code(node.name), level + 1
         )
         if init and init.signature:
             title += format_signature(init.signature)
         else:
-            warnings.warn(f"Can not get __init__ method signature of class {node.name}")
+            warnings.warn(
+                f"Can not get __init__ method signature of class {node.name}",
+                stacklevel=1,
+            )
         result.append(self._extend_title(title, node))
 
         result.append("Bases: " + ", ".join(map(Markdown.inline_code, node.bases)))
@@ -297,9 +308,9 @@ class MarkdownBuilder(Builder):
             if node.signature and node.signature.parameters:
                 for key, param in node.signature.parameters.items():
                     if param.kind == param.VAR_POSITIONAL:
-                        key = "*" + key
+                        key = "*" + key  # noqa: PLW2901
                     elif param.kind == param.VAR_KEYWORD:
-                        key = "**" + key
+                        key = "**" + key  # noqa: PLW2901
                     parma_dict[key] = (param, None)
 
             if docstring.params:
@@ -309,7 +320,8 @@ class MarkdownBuilder(Builder):
                     ):
                         warnings.warn(
                             f'The argument "{param_doc.arg_name}" '
-                            f"can not find in function signature."
+                            f"can not find in function signature.",
+                            stacklevel=1,
                         )
                     param, _ = parma_dict.get(param_doc.arg_name, (None, None))
                     if param_doc.type_name is None and param:
@@ -349,7 +361,7 @@ class MarkdownBuilder(Builder):
         level: int = 1,
         kind: str = "function",
         ignore_first_arg: bool = False,
-        **kwargs,
+        **kwargs,  # noqa: ARG002
     ) -> str:
         """Build markdown string from a FunctionNode.
 
@@ -359,17 +371,19 @@ class MarkdownBuilder(Builder):
             kind: The function kind, like 'function', 'method', 'class method'.
             ignore_first_arg: If True the first argument of the function
                 will be ignored.
+            **kwargs: Other args.
 
         Returns:
             A markdown string.
         """
         if not node.signature:
             warnings.warn(
-                f"The {node.qualname} ({node.obj}) not have signature, ignored."
+                f"The {node.qualname} ({node.obj}) not have signature, ignored.",
+                stacklevel=1,
             )
             return ""
 
-        _kind = list()
+        _kind = []
         if node.is_async:
             _kind.append("async")
         if node.is_lambda_func:
@@ -377,16 +391,14 @@ class MarkdownBuilder(Builder):
         _kind.append(kind)
         _kind = " ".join(_kind)
 
-        result: List[str] = list()
+        result: List[str] = []
         result.append(
             self._extend_title(
                 Markdown.title(
                     Markdown.italic(_kind)
                     + " "
                     + Markdown.inline_code(
-                        "{name}{signature}".format(
-                            name=node.name, signature=format_signature(node.signature)
-                        )
+                        f"{node.name}{format_signature(node.signature)}"
                     ),
                     level + 1,
                 ),
@@ -443,7 +455,12 @@ class MarkdownBuilder(Builder):
         return self._build_str(result)
 
     def build_data(
-        self, node: DataNode, *, level: int = 1, kind: str = "data", **kwargs
+        self,
+        node: DataNode,
+        *,
+        level: int = 1,
+        kind: str = "data",
+        **kwargs,  # noqa: ARG002
     ) -> str:
         """Build markdown string from a DataNode.
 
@@ -451,6 +468,7 @@ class MarkdownBuilder(Builder):
             node: A DataNode.
             level: The title level.
             kind: The function kind, like 'data', 'property'.
+            **kwargs: Other args.
 
         Returns:
             A markdown string.
@@ -458,7 +476,7 @@ class MarkdownBuilder(Builder):
         if self.ignore_data and kind == "data":
             return ""
 
-        result: List[str] = list()
+        result: List[str] = []
         result.append(
             self._extend_title(
                 Markdown.title(

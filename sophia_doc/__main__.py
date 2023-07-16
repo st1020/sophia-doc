@@ -1,11 +1,12 @@
-import sys
+"""The Sophia-doc Command-line interface."""
 import argparse
+import sys
 
 from docstring_parser import DocstringStyle
 
 from sophia_doc import ModuleNode
-from sophia_doc.utils import import_module
 from sophia_doc.builders.markdown import MarkdownBuilder
+from sophia_doc.utils import import_module
 
 if sys.version_info >= (3, 9):
     from argparse import BooleanOptionalAction
@@ -49,7 +50,7 @@ else:
 
         def __call__(self, parser, namespace, values, option_string=None):
             if option_string in self.option_strings:
-                setattr(namespace, self.dest, not option_string.startswith("--no-"))
+                setattr(namespace, self.dest, not option_string.startswith("--no-"))  # type: ignore
 
         def format_usage(self):
             return " | ".join(self.option_strings)
@@ -111,6 +112,7 @@ parser.add_argument(
 
 
 def cli():
+    """The Sophia-doc Command-line interface."""
     args = parser.parse_args()
     MarkdownBuilder(
         ModuleNode(import_module(args.module)),
