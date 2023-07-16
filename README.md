@@ -8,16 +8,15 @@ Sophia is a python package to automatically generate API documents for Python mo
 
 It's a lot like sphinx, but it only focuses on generating markdown documentation.
 
-It does not support PEP 224 attribute docstrings, because the PEP was rejected, and have to use ast module to support
-it, which brings additional complexity to this project.
+It does not support PEP 224 attribute docstring, because the PEP was rejected, and have to use ast module to support it, which brings additional complexity to this project.
 
-# Install
+## Install
 
 ```shell
 pip install sophia-doc
 ```
 
-# Quickstart
+## Quickstart
 
 ```shell
 sophia_doc "sophia_doc" -o ./doc
