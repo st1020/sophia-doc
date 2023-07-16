@@ -265,7 +265,7 @@ class ModuleNode(DocNode[types.ModuleType]):
         _all = getattr(self.obj, "__all__", None)
         attributes = []
         for key, value in list(getattr(self.obj, "__dict__", {}).items()):
-            if _all is not None or (inspect.getmodule(value) or self.obj) is self.obj:
+            if (inspect.getmodule(value) or self.obj) is self.obj:
                 if is_visible_name(key, _all):
                     attributes.append(self.from_obj(value, key, key, self))
         return attributes
