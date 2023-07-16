@@ -11,15 +11,15 @@ builder = sophia_doc.builders.markdown.MarkdownBuilder(module)
 builder.write('doc_dir')
 ```
 """
-import sys
 import inspect
 import pkgutil
-import warnings
+import sys
 import traceback
+import types
+import warnings
 from enum import Enum
 from functools import cached_property
-from types import MethodType, ModuleType, FunctionType, MethodDescriptorType
-from typing import Any, Dict, List, Tuple, Union, Generic, TypeVar, Optional, NamedTuple
+from typing import Any, Dict, Generic, List, NamedTuple, Optional, Tuple, TypeVar, Union
 
 from sophia_doc.utils import import_module
 
@@ -253,10 +253,10 @@ class DocNode(Generic[_T]):
         )
 
 
-class ModuleNode(DocNode[ModuleType]):
+class ModuleNode(DocNode[types.ModuleType]):
     """The class of module node."""
 
-    def __init__(self, obj: ModuleType):
+    def __init__(self, obj: types.ModuleType):
         super().__init__(obj, obj.__name__, "", self)
 
     @cached_property
@@ -358,32 +358,50 @@ class ClassNode(DocNode[type]):
     def attributes(self) -> List["ClassNode.Attribute"]:
         """A list of attributes of this class."""
         attributes = []
-        for name, kind, cls, value in inspect.classify_class_attrs(self.obj):
-            if (is_visible_name(name) and cls is self.obj) or (
-                name == "__init__" and not isinstance(self.obj, Enum)
-            ):
-                if inspect.isdatadescriptor(value):
-                    # ignore data descriptor create by __slots__
-                    if name in getattr(self.obj, "__slots__", []):
-                        continue
-                    kind = "data descriptor"
-                    if isinstance(value, property):
-                        kind = "readonly property" if value.fset is None else "property"
-                # get original function from class method or static method
-                if kind == "class method" or kind == "static method":
-                    value = value.__func__  # type: ignore
-                # functools.cached_property needs special handling
-                if isinstance(value, cached_property):
-                    kind = "cached property"
-                    node = DataNode(
-                        value, name, self.qualname + "." + name, self.module
-                    )
+        for name in filter(is_visible_name, dir(self.obj)):
+            if isinstance(self.obj, Enum) and name == "__init__":
+                continue
 
-                else:
-                    node = DocNode.from_obj(
-                        value, name, self.qualname + "." + name, self.module
-                    )
-                attributes.append(self.Attribute(name, kind, node))
+            if (
+                name != "__init__"
+                and name not in self.obj.__dict__
+                and name not in getattr(self.obj, "__slots__", [])
+            ):
+                continue
+
+            value = getattr(self.obj, name)
+
+            if isinstance(value, (staticmethod, types.BuiltinMethodType)):
+                kind = "static method"
+            elif isinstance(value, (classmethod, types.ClassMethodDescriptorType)):
+                kind = "class method"
+            elif isinstance(value, property):
+                kind = "readonly property" if value.fset is None else "property"
+            elif inspect.isroutine(value):
+                kind = "method"
+            elif inspect.isdatadescriptor(value):
+                # ignore data descriptor create by __slots__
+                if name in getattr(self.obj, "__slots__", []):
+                    continue
+                kind = "data descriptor"
+            else:
+                kind = "data"
+
+            # get original function from class method or static method
+            if kind == "class method" or kind == "static method":
+                value = value.__func__  # type: ignore
+
+            # functools.cached_property needs special handling
+            if isinstance(value, cached_property):
+                kind = "cached property"
+                node = DataNode(value, name, self.qualname + "." + name, self.module)
+            else:
+                node = DocNode.from_obj(
+                    value, name, self.qualname + "." + name, self.module
+                )
+
+            attributes.append(self.Attribute(name, kind, node))
+
         return attributes
 
     @cached_property
@@ -417,7 +435,9 @@ class ClassNode(DocNode[type]):
         return inspect.isabstract(self.obj)
 
 
-class FunctionNode(DocNode[Union[FunctionType, MethodType, MethodDescriptorType]]):
+class FunctionNode(
+    DocNode[Union[types.FunctionType, types.MethodType, types.MethodDescriptorType]]
+):
     """The class of function node."""
 
     @cached_property
