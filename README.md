@@ -12,13 +12,13 @@ It does not support PEP 224 attribute docstring, because the PEP was rejected, a
 
 ## Install
 
-```shell
+```sh
 pip install sophia-doc
 ```
 
 ## Quickstart
 
-```shell
+```sh
 sophia_doc "sophia_doc" -o ./doc
 ```
 
@@ -26,7 +26,7 @@ sophia_doc "sophia_doc" -o ./doc
 
 Command line:
 
-```shell
+```txt
 usage: sophia_doc [-h] [-o OUTPUT_DIR] [--docstring-style DOCSTRING_STYLE] [--anchor-extend | --no-anchor-extend] [--overwrite | --no-overwrite]
                    [--exclude-module-name | --no-exclude-module-name]
                    module
