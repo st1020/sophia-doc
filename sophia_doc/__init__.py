@@ -11,6 +11,8 @@ builder = sophia_doc.builders.markdown.MarkdownBuilder(module)
 builder.write('doc_dir')
 ```
 """
+from __future__ import annotations
+
 import inspect
 import pkgutil
 import sys
@@ -19,14 +21,14 @@ import types
 import warnings
 from enum import Enum
 from functools import cached_property
-from typing import Any, Dict, Generic, List, NamedTuple, Optional, Tuple, TypeVar, Union
+from typing import Any, Generic, NamedTuple, TypeVar, Union
 
 from sophia_doc.utils import import_module
 
 _T = TypeVar("_T")
 
 
-def _find_class(func: Any) -> Optional[type]:
+def _find_class(func: Any) -> type | None:
     # cut from pydoc
     cls = sys.modules.get(func.__module__)
     if cls is None:
@@ -38,7 +40,7 @@ def _find_class(func: Any) -> Optional[type]:
     return cls
 
 
-def _find_doc(obj: Any) -> Optional[str]:
+def _find_doc(obj: Any) -> str | None:
     # cut from pydoc
     if inspect.ismethod(obj):
         name = obj.__func__.__name__  # type: ignore
@@ -92,7 +94,7 @@ def _find_doc(obj: Any) -> Optional[str]:
     return None
 
 
-def _get_own_doc(obj: Any) -> Optional[str]:
+def _get_own_doc(obj: Any) -> str | None:
     """Get the documentation string for an object if it is not inherited from its class."""
     # cut from pydoc
     try:
@@ -103,9 +105,10 @@ def _get_own_doc(obj: Any) -> Optional[str]:
             typedoc = type(obj).__doc__
             if isinstance(typedoc, str) and typedoc == doc:
                 return None
-        return doc
     except AttributeError:
         return None
+    else:
+        return doc
 
 
 def _getdoc(obj: Any):
@@ -147,7 +150,7 @@ def isdata(obj: object) -> bool:
     )
 
 
-def is_visible_name(name: str, _all: Optional[list] = None) -> bool:
+def is_visible_name(name: str, _all: list | None = None) -> bool:
     """Decide whether to show documentation on a variable.
 
     Args:
@@ -165,7 +168,7 @@ def is_visible_name(name: str, _all: Optional[list] = None) -> bool:
     return not name.startswith("_")
 
 
-def get_annotations(obj: Any) -> Dict[str, Any]:
+def get_annotations(obj: Any) -> dict[str, Any]:
     """Get the annotations dict for an object."""
     # refs: https://docs.python.org/3/howto/annotations.html
     if sys.version_info >= (3, 10):
@@ -187,10 +190,10 @@ class DocNode(Generic[_T]):
     __slots__ = ("obj", "name", "module", "_qualname")
     obj: _T
     name: str
-    module: "ModuleNode"
+    module: ModuleNode
     _qualname: str
 
-    def __init__(self, obj: _T, name: str, qualname: str, module: "ModuleNode"):
+    def __init__(self, obj: _T, name: str, qualname: str, module: ModuleNode):
         """Init DocNode."""
         self.obj = obj
         self.name = name
@@ -208,7 +211,7 @@ class DocNode(Generic[_T]):
         return getattr(self.obj, "__name__", self.name)
 
     @cached_property
-    def annotations(self) -> Dict[str, Any]:
+    def annotations(self) -> dict[str, Any]:
         """Annotations of this object."""
         return get_annotations(self.obj)
 
@@ -218,7 +221,7 @@ class DocNode(Generic[_T]):
         return getdoc(self.obj)
 
     @staticmethod
-    def from_obj(obj: Any, name: str, qualname: str, module: "ModuleNode") -> "DocNode":
+    def from_obj(obj: Any, name: str, qualname: str, module: ModuleNode) -> DocNode:
         """Returns an object of DocNode's subclass.
 
         Args:
@@ -259,7 +262,7 @@ class ModuleNode(DocNode[types.ModuleType]):
         super().__init__(obj, obj.__name__, "", self)
 
     @cached_property
-    def attributes(self) -> List[DocNode]:
+    def attributes(self) -> list[DocNode]:
         """A list of attributes of this module."""
         _all = getattr(self.obj, "__all__", None)
         attributes = []
@@ -271,7 +274,7 @@ class ModuleNode(DocNode[types.ModuleType]):
         return attributes
 
     @cached_property
-    def submodules(self) -> List["ModuleNode"]:
+    def submodules(self) -> list[ModuleNode]:
         """A list of submodules of this module."""
         submodules = []
         submodule_names = set()
@@ -298,7 +301,7 @@ class ModuleNode(DocNode[types.ModuleType]):
         return submodules
 
     @cached_property
-    def file(self) -> Optional[str]:
+    def file(self) -> str | None:
         """The source file name of this module."""
         try:
             return inspect.getabsfile(self.obj)
@@ -306,7 +309,7 @@ class ModuleNode(DocNode[types.ModuleType]):
             return None
 
     @cached_property
-    def source(self) -> Optional[str]:
+    def source(self) -> str | None:
         """The source of this module."""
         loader = getattr(self.obj, "__loader__", None)
         if loader and getattr(loader, "get_source", None):
@@ -332,17 +335,17 @@ class ModuleNode(DocNode[types.ModuleType]):
         return hasattr(self.obj, "__path__") and not hasattr(self.obj, "__file__")
 
     @cached_property
-    def classes(self) -> List["ClassNode"]:
+    def classes(self) -> list[ClassNode]:
         """A list of class objects in this module's attributes."""
         return [i for i in self.attributes if isinstance(i, ClassNode)]
 
     @cached_property
-    def functions(self) -> List["FunctionNode"]:
+    def functions(self) -> list[FunctionNode]:
         """A list of function objects in this module's attributes."""
         return [i for i in self.attributes if isinstance(i, FunctionNode)]
 
     @cached_property
-    def data(self) -> List["DataNode"]:
+    def data(self) -> list[DataNode]:
         """A list of data objects in module's this attributes."""
         return [i for i in self.attributes if isinstance(i, DataNode)]
 
@@ -358,7 +361,7 @@ class ClassNode(DocNode[type]):
         node: DocNode
 
     @cached_property
-    def attributes(self) -> List["ClassNode.Attribute"]:
+    def attributes(self) -> list[ClassNode.Attribute]:
         """A list of attributes of this class."""
         attributes = []
         for name in filter(is_visible_name, dir(self.obj)):
@@ -408,7 +411,7 @@ class ClassNode(DocNode[type]):
         return attributes
 
     @cached_property
-    def subclasses(self) -> List["ClassNode"]:
+    def subclasses(self) -> list[ClassNode]:
         """A list of subclasses of this class."""
         return [
             ClassNode(cls, cls.__name__, cls.__qualname__, self.module)
@@ -417,7 +420,7 @@ class ClassNode(DocNode[type]):
         ]
 
     @cached_property
-    def bases(self) -> Tuple[str, ...]:
+    def bases(self) -> tuple[str, ...]:
         """Base class names of this class."""
         return tuple(
             (x.__module__ + "." if x.__module__ != "builtins" else "") + x.__qualname__
@@ -425,7 +428,7 @@ class ClassNode(DocNode[type]):
         )
 
     @cached_property
-    def mro(self) -> Tuple[type, ...]:
+    def mro(self) -> tuple[type, ...]:
         """The mro of this class."""
         return inspect.getmro(self.obj)
 
@@ -441,7 +444,7 @@ class FunctionNode(
     """The class of function node."""
 
     @cached_property
-    def signature(self) -> Optional[inspect.Signature]:
+    def signature(self) -> inspect.Signature | None:
         """Signature of this function."""
         try:
             return inspect.signature(self.obj)
@@ -475,7 +478,7 @@ class DataNode(DocNode[_T]):
     """The class of data node."""
 
     @cached_property
-    def annotations(self) -> Dict[str, Any]:
+    def annotations(self) -> dict[str, Any]:
         """Annotations of this object."""
         if isinstance(self.obj, property):
             return get_annotations(self.obj.fget)

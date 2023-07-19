@@ -1,4 +1,6 @@
 """Builder is class to build ModuleNode to target formats."""
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -19,12 +21,12 @@ class Builder(ABC):
         docstring_style: The docstring style the module used, auto check by default.
     """
 
-    module: "ModuleNode"
+    module: ModuleNode
     docstring_style: DocstringStyle
 
     def __init__(
         self,
-        module: "ModuleNode",
+        module: ModuleNode,
         *,
         docstring_style: DocstringStyle = DocstringStyle.AUTO,
     ):
@@ -37,11 +39,11 @@ class Builder(ABC):
         self.module = module
         self.docstring_style = docstring_style
 
-    def _new_builder(self, module: "ModuleNode") -> "Builder":
+    def _new_builder(self, module: ModuleNode) -> Builder:
         """Get a new instance of Builder class, is used in write method."""
         return self.__class__(module, docstring_style=self.docstring_style)
 
-    def get_docstring(self, obj: "DocNode") -> "Docstring":
+    def get_docstring(self, obj: DocNode) -> Docstring:
         """Get the Docstring object of a DocNode object.
 
         Args:

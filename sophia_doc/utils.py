@@ -1,11 +1,15 @@
 """Utils of sophia_doc."""
+from __future__ import annotations
+
 import importlib
 import inspect
 import re
 import traceback
 import warnings
-from types import ModuleType
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 
 def import_module(modname: str) -> ModuleType:
@@ -21,16 +25,16 @@ def import_module(modname: str) -> ModuleType:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=ImportWarning)
             return importlib.import_module(modname)
+    except KeyboardInterrupt:
+        # Dot not catch KeyboardInterrupt.
+        # Catch KeyboardInterrupt may prevent user kill python
+        # when the module took a too long time to import.
+        raise
     except BaseException as exc:
-        if isinstance(exc, KeyboardInterrupt):
-            # Dot not catch KeyboardInterrupt.
-            # Catch KeyboardInterrupt may prevent user kill python
-            # when the module took a too long time to import.
-            raise exc
         raise ImportError(exc, traceback.format_exc()) from exc
 
 
-def format_annotation(annotation: Any, base_module: Optional[ModuleType] = None) -> str:
+def format_annotation(annotation: Any, base_module: ModuleType | None = None) -> str:
     """Format the annotation.
 
     Args:

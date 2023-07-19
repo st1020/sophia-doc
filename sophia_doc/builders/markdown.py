@@ -1,9 +1,10 @@
 """The Markdown Builder."""
+from __future__ import annotations
+
 import inspect
 import warnings
 from pathlib import Path
 from textwrap import indent
-from typing import Dict, List, Optional, Tuple
 
 from docstring_parser import Docstring, DocstringParam, DocstringStyle
 
@@ -12,7 +13,7 @@ from sophia_doc.builders import Builder
 from sophia_doc.utils import format_annotation, format_signature
 
 
-def get_description(docstring: Docstring) -> List[str]:
+def get_description(docstring: Docstring) -> list[str]:
     """Get description form a Docstring object.
 
     Args:
@@ -21,7 +22,7 @@ def get_description(docstring: Docstring) -> List[str]:
     Returns:
         A list of description string.
     """
-    result: List[str] = []
+    result: list[str] = []
     if docstring.short_description:
         result.append(docstring.short_description)
     if docstring.long_description:
@@ -29,9 +30,7 @@ def get_description(docstring: Docstring) -> List[str]:
     return result
 
 
-def parser_param(
-    name: str, annotation: Optional[str], description: Optional[str]
-) -> str:
+def parser_param(name: str, annotation: str | None, description: str | None) -> str:
     """Get formatted string of parameter.
 
     Args:
@@ -116,7 +115,7 @@ class MarkdownBuilder(Builder):
         self.anchor_extend = anchor_extend
         self.ignore_data = ignore_data
 
-    def _new_builder(self, module: ModuleNode) -> "Builder":
+    def _new_builder(self, module: ModuleNode) -> Builder:
         return self.__class__(
             module,
             docstring_style=self.docstring_style,
@@ -150,19 +149,18 @@ class MarkdownBuilder(Builder):
 
     def text(self) -> str:
         """Get string of current module documentation."""
-        result: List[str] = []
+        result: list[str] = []
         result.append(Markdown.title(self.module.name, 1))
 
         docstring = self.get_docstring(self.module)
         result.extend(get_description(docstring))
 
-        for node in self.module.attributes:
-            result.append(self.build_doc(node))
+        result.extend(self.build_doc(node) for node in self.module.attributes)
 
         return self._build_str(result).replace("<", r"\<").replace(">", r"\>")
 
     @staticmethod
-    def _build_str(str_list: List[str]) -> str:
+    def _build_str(str_list: list[str]) -> str:
         return "\n\n".join(filter(lambda x: x, str_list))
 
     def build_doc(self, node: DocNode, *, level: int = 1, **kwargs) -> str:
@@ -212,7 +210,7 @@ class MarkdownBuilder(Builder):
                 assert isinstance(attr.node, FunctionNode)
                 init = attr.node
 
-        result: List[str] = []
+        result: list[str] = []
         title = Markdown.title(
             Markdown.italic(_kind) + " " + Markdown.inline_code(node.name), level + 1
         )
@@ -240,9 +238,7 @@ class MarkdownBuilder(Builder):
         if docstring.params or node.annotations:
             result.append("- **Attributes**")
 
-            parma_dict: Dict[
-                str, Tuple[inspect.Parameter, Optional[DocstringParam]]
-            ] = {}
+            parma_dict: dict[str, tuple[inspect.Parameter, DocstringParam | None]] = {}
             if node.annotations:
                 parma_dict = {
                     key: (annotation, None)
@@ -299,12 +295,10 @@ class MarkdownBuilder(Builder):
     @staticmethod
     def _build_argument(
         node: FunctionNode, docstring: Docstring, *, ignore_first_arg: bool = False
-    ) -> List[str]:
+    ) -> list[str]:
         result = []
         if docstring.params or (node.signature and node.signature.parameters):
-            parma_dict: Dict[
-                str, Tuple[inspect.Parameter, Optional[DocstringParam]]
-            ] = {}
+            parma_dict: dict[str, tuple[inspect.Parameter, DocstringParam | None]] = {}
             if node.signature and node.signature.parameters:
                 for key, param in node.signature.parameters.items():
                     if param.kind == param.VAR_POSITIONAL:
@@ -391,7 +385,7 @@ class MarkdownBuilder(Builder):
         _kind.append(kind)
         _kind = " ".join(_kind)
 
-        result: List[str] = []
+        result: list[str] = []
         result.append(
             self._extend_title(
                 Markdown.title(
@@ -438,15 +432,15 @@ class MarkdownBuilder(Builder):
 
         if docstring.raises:
             result.append("- **Raises**")
-            for raise_doc in docstring.raises:
-                result.append(
-                    Markdown.indent(
-                        "- {type_name} - {description}".format(
-                            type_name=Markdown.bold(raise_doc.type_name or ""),
-                            description=raise_doc.description,
-                        )
+            result.extend(
+                Markdown.indent(
+                    "- {type_name} - {description}".format(
+                        type_name=Markdown.bold(raise_doc.type_name or ""),
+                        description=raise_doc.description,
                     )
                 )
+                for raise_doc in docstring.raises
+            )
 
         if docstring.examples:
             result.append("- **Examples**")
@@ -476,7 +470,7 @@ class MarkdownBuilder(Builder):
         if self.ignore_data and kind == "data":
             return ""
 
-        result: List[str] = []
+        result: list[str] = []
         result.append(
             self._extend_title(
                 Markdown.title(
