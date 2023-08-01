@@ -43,9 +43,9 @@ def parser_param(name: str, annotation: str | None, description: str | None) -> 
     Returns:
         Formatted string of parameter.
     """
-    result = f"- {Markdown.bold(name)}"
+    result = f"- {Markdown.bold(Markdown.escape(name))}"
     if annotation:
-        result += f" ({Markdown.italic(annotation)})"
+        result += f" ({Markdown.italic(Markdown.escape(annotation))})"
     if description:
         result += f" - {description}"
     return result
@@ -65,6 +65,16 @@ def parser_docstring_param(param: DocstringParam) -> str:
 
 class Markdown:
     """Markdown format."""
+
+    @staticmethod
+    def escape(text: str) -> str:
+        """Escape Markdown control characters."""
+        new_text = ""
+        for c in text:
+            if c in "*#\\()[]<>_`":
+                new_text += "\\"
+            new_text += c
+        return new_text
 
     @staticmethod
     def indent(text: str, level: int = 1) -> str:
@@ -187,7 +197,11 @@ class MarkdownBuilder(Builder):
         raise ValueError
 
     def _extend_title(self, title: str, node: DocNode[Any]) -> str:
-        return title + " {#" + node.qualname + "}" if self.anchor_extend else title
+        return (
+            title + " {#" + Markdown.escape(node.qualname) + "}"
+            if self.anchor_extend
+            else title
+        )
 
     def build_class(self, node: ClassNode, *, level: int = 1) -> str:
         """Build markdown string from a ClassNode.
@@ -428,7 +442,11 @@ class MarkdownBuilder(Builder):
                 )
 
             if type_name:
-                result.append(Markdown.indent(f"Type: {Markdown.italic(type_name)}"))
+                result.append(
+                    Markdown.indent(
+                        f"Type: {Markdown.italic(Markdown.escape(type_name))}"
+                    )
+                )
 
             if docstring.returns and docstring.returns.description:
                 result.append(Markdown.indent(docstring.returns.description))
@@ -438,7 +456,9 @@ class MarkdownBuilder(Builder):
             result.extend(
                 Markdown.indent(
                     "- {type_name} - {description}".format(
-                        type_name=Markdown.bold(raise_doc.type_name or ""),
+                        type_name=Markdown.bold(
+                            Markdown.escape(raise_doc.type_name or "")
+                        ),
                         description=raise_doc.description,
                     )
                 )
@@ -486,8 +506,10 @@ class MarkdownBuilder(Builder):
             result.append(
                 "Type: {type_name}".format(
                     type_name=Markdown.italic(
-                        format_annotation(
-                            node.annotations["return"], base_module=node.module.name
+                        Markdown.escape(
+                            format_annotation(
+                                node.annotations["return"], base_module=node.module.name
+                            )
                         )
                     )
                 )
