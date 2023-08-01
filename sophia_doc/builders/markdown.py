@@ -171,7 +171,7 @@ class MarkdownBuilder(Builder):
 
         result.extend(self.build_doc(node) for node in self.module.attributes)
 
-        return self._build_str(result)
+        return self._build_str(result) + "\n"
 
     @staticmethod
     def _build_str(str_list: list[str]) -> str:
@@ -189,7 +189,7 @@ class MarkdownBuilder(Builder):
             A markdown string.
         """
         if isinstance(node, ClassNode):
-            return self.build_class(node, level=level)
+            return self.build_class(node, level=level, **kwargs)
         if isinstance(node, FunctionNode):
             return self.build_function(node, level=level, **kwargs)
         if isinstance(node, DataNode):
@@ -203,7 +203,7 @@ class MarkdownBuilder(Builder):
             else title
         )
 
-    def build_class(self, node: ClassNode, *, level: int = 1) -> str:
+    def build_class(self, node: ClassNode, *, level: int = 1, **_kwagrs: Any) -> str:
         """Build markdown string from a ClassNode.
 
         Args:
@@ -222,36 +222,16 @@ class MarkdownBuilder(Builder):
             _kind.append("class")
         kind = " ".join(_kind)
 
-        init = None
-        for attr in node.attributes:
-            if attr.name == "__init__":
-                assert isinstance(attr.node, FunctionNode)
-                init = attr.node
-
         result: list[str] = []
         title = Markdown.title(
             Markdown.italic(kind) + " " + Markdown.inline_code(node.name), level + 1
         )
-        if init and init.signature:
-            title += format_signature(init.signature)
-        else:
-            warnings.warn(
-                f"Can not get __init__ method signature of class {node.name}",
-                stacklevel=1,
-            )
         result.append(self._extend_title(title, node))
 
         result.append("Bases: " + ", ".join(map(Markdown.inline_code, node.bases)))
 
         docstring = self.get_docstring(node)
         result.extend(get_description(docstring))
-
-        if init and init.signature:
-            result.extend(
-                self._build_argument(
-                    init, self.get_docstring(init), ignore_first_arg=True
-                )
-            )
 
         if docstring.params or node.annotations:
             result.append("- **Attributes**")
@@ -296,9 +276,7 @@ class MarkdownBuilder(Builder):
             result.append("- **Examples**")
             result.append(Markdown.indent(docstring.examples[0].description or ""))
 
-        for name, kind, node_ in node.attributes:
-            if name == "__init__":
-                continue
+        for _name, kind, node_ in node.attributes:
             result.append(
                 self.build_doc(
                     node_,
@@ -332,7 +310,7 @@ class MarkdownBuilder(Builder):
                         node.signature and node.signature.parameters
                     ):
                         warnings.warn(
-                            f'The argument "{param_doc.arg_name}" '
+                            f'The argument "{param_doc.arg_name}" of {node.qualname}'
                             f"can not find in function signature.",
                             stacklevel=1,
                         )
@@ -374,6 +352,7 @@ class MarkdownBuilder(Builder):
         level: int = 1,
         kind: str = "function",
         ignore_first_arg: bool = False,
+        **_kwagrs: Any,
     ) -> str:
         """Build markdown string from a FunctionNode.
 
@@ -477,6 +456,7 @@ class MarkdownBuilder(Builder):
         *,
         level: int = 1,
         kind: str = "data",
+        **_kwagrs: Any,
     ) -> str:
         """Build markdown string from a DataNode.
 
