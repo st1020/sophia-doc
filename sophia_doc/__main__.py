@@ -1,4 +1,6 @@
 """The Sophia-doc Command-line interface."""
+from __future__ import annotations
+
 import argparse
 import sys
 
@@ -12,25 +14,30 @@ if sys.version_info >= (3, 9):
     from argparse import BooleanOptionalAction
 else:
     from argparse import Action
+    from typing import Any, Callable, Iterable, Sequence, TypeVar
+
+    from typing_extensions import override
+
+    _T = TypeVar("_T")
 
     class BooleanOptionalAction(Action):
         def __init__(
             self,
-            option_strings,
-            dest,
-            default=None,
-            type=None,
-            choices=None,
-            required=False,
-            help=None,
-            metavar=None,
-        ):
-            _option_strings = []
+            option_strings: Sequence[str],
+            dest: str,
+            default: _T | str | None = None,
+            type: Callable[[str], _T] | Any | None = None,
+            choices: Iterable[_T] | None = None,
+            required: bool = False,
+            help: str | None = None,
+            metavar: str | tuple[str, ...] | None = None,
+        ) -> None:
+            _option_strings: list[str] = []
             for option_string in option_strings:
                 _option_strings.append(option_string)
 
                 if option_string.startswith("--"):
-                    option_string = "--no-" + option_string[2:]
+                    option_string = "--no-" + option_string[2:]  # noqa: PLW2901
                     _option_strings.append(option_string)
 
             if help is not None and default is not None:
@@ -48,11 +55,22 @@ else:
                 metavar=metavar,
             )
 
-        def __call__(self, parser, namespace, values, option_string=None):
-            if option_string in self.option_strings:
-                setattr(namespace, self.dest, not option_string.startswith("--no-"))  # type: ignore
+        @override
+        def __call__(
+            self,
+            _parser: Any,
+            namespace: Any,
+            _values: str | Sequence[Any] | None,
+            option_string: str | None = None,
+        ) -> None:
+            if option_string is not None and option_string in self.option_strings:
+                setattr(
+                    namespace,
+                    self.dest,
+                    not option_string.startswith("--no-"),
+                )
 
-        def format_usage(self):
+        def format_usage(self) -> str:
             return " | ".join(self.option_strings)
 
 
@@ -111,7 +129,7 @@ parser.add_argument(
 )
 
 
-def cli():
+def cli() -> None:
     """The Sophia-doc Command-line interface."""
     args = parser.parse_args()
     MarkdownBuilder(

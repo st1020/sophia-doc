@@ -21,7 +21,9 @@ import types
 import warnings
 from enum import Enum
 from functools import cached_property
-from typing import Any, Generic, NamedTuple, TypeVar, Union
+from typing import Any, Generic, NamedTuple, TypeVar, Union, cast
+
+from typing_extensions import override
 
 from sophia_doc.utils import import_module
 
@@ -41,14 +43,11 @@ def _find_class(func: Any) -> type | None:
 
 
 def _find_doc(obj: Any) -> str | None:
-    # cut from pydoc
+    name: str
     if inspect.ismethod(obj):
-        name = obj.__func__.__name__  # type: ignore
+        name = cast(str, obj.__func__.__name__)  # type: ignore
         self = obj.__self__
-        if (
-            inspect.isclass(self)
-            and getattr(self, name, None).__func__ is obj.__func__  # type: ignore
-        ):
+        if inspect.isclass(self) and getattr(self, name).__func__ is obj.__func__:
             # class method
             cls = self
         else:
@@ -69,22 +68,23 @@ def _find_doc(obj: Any) -> str | None:
     # Should be tested before isdatadescriptor().
     elif isinstance(obj, property):
         func = obj.fget
-        name = func.__name__  # type: ignore
+        assert func is not None
+        name = func.__name__
         cls = _find_class(func)
         if cls is None or getattr(cls, name) is not obj:
             return None
     elif inspect.ismethoddescriptor(obj) or inspect.isdatadescriptor(obj):
-        name = obj.__name__  # type: ignore
-        cls = obj.__objclass__  # type: ignore
+        name = cast(str, obj.__name__)  # type: ignore
+        cls: Any = obj.__objclass__  # type: ignore
         if getattr(cls, name) is not obj:
             return None
         if inspect.ismemberdescriptor(obj):
             slots = getattr(cls, "__slots__", None)
             if isinstance(slots, dict) and name in slots:
-                return slots[name]
+                return slots[name]  # type: ignore
     else:
         return None
-    for base in cls.__mro__:  # type: ignore
+    for base in cls.__mro__:
         try:
             doc = _get_own_doc(getattr(base, name))
         except AttributeError:
@@ -111,7 +111,7 @@ def _get_own_doc(obj: Any) -> str | None:
         return doc
 
 
-def _getdoc(obj: Any):
+def _getdoc(obj: Any) -> str | None:
     """Get the documentation string for an object.
 
     All tabs are expanded to space. To clean up docstrings that are
@@ -150,7 +150,7 @@ def isdata(obj: object) -> bool:
     )
 
 
-def is_visible_name(name: str, _all: list | None = None) -> bool:
+def is_visible_name(name: str, _all: list[str] | None = None) -> bool:
     """Decide whether to show documentation on a variable.
 
     Args:
@@ -193,7 +193,7 @@ class DocNode(Generic[_T]):
     module: ModuleNode
     _qualname: str
 
-    def __init__(self, obj: _T, name: str, qualname: str, module: ModuleNode):
+    def __init__(self, obj: _T, name: str, qualname: str, module: ModuleNode) -> None:
         """Init DocNode."""
         self.obj = obj
         self.name = name
@@ -221,7 +221,9 @@ class DocNode(Generic[_T]):
         return getdoc(self.obj)
 
     @staticmethod
-    def from_obj(obj: Any, name: str, qualname: str, module: ModuleNode) -> DocNode:
+    def from_obj(
+        obj: Any, name: str, qualname: str, module: ModuleNode
+    ) -> DocNode[Any]:
         """Returns an object of DocNode's subclass.
 
         Args:
@@ -239,14 +241,15 @@ class DocNode(Generic[_T]):
             if inspect.isclass(obj):
                 return ClassNode(obj, name, qualname, module)
             if inspect.isroutine(obj):
-                return FunctionNode(obj, name, qualname, module)  # type: ignore
+                return FunctionNode(obj, name, qualname, module)
         except AttributeError:
             pass
         if isdata(obj):
             return DataNode(obj, name, qualname, module)
         return OtherNode(obj, name, qualname, module)
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         """Return the repr of this DocNode."""
         return (
             f"{self.__class__.__name__}:{self.name} "
@@ -257,15 +260,15 @@ class DocNode(Generic[_T]):
 class ModuleNode(DocNode[types.ModuleType]):
     """The class of module node."""
 
-    def __init__(self, obj: types.ModuleType):
+    def __init__(self, obj: types.ModuleType) -> None:
         """Init ModuleNode."""
         super().__init__(obj, obj.__name__, "", self)
 
     @cached_property
-    def attributes(self) -> list[DocNode]:
+    def attributes(self) -> list[DocNode[Any]]:
         """A list of attributes of this module."""
         _all = getattr(self.obj, "__all__", None)
-        attributes = []
+        attributes: list[DocNode[Any]] = []
         for key, value in list(getattr(self.obj, "__dict__", {}).items()):
             if (inspect.getmodule(value) or self.obj) is self.obj and is_visible_name(
                 key, _all
@@ -276,8 +279,8 @@ class ModuleNode(DocNode[types.ModuleType]):
     @cached_property
     def submodules(self) -> list[ModuleNode]:
         """A list of submodules of this module."""
-        submodules = []
-        submodule_names = set()
+        submodules: list[ModuleNode] = []
+        submodule_names: set[str] = set()
         if self.is_package:
             for _importer, modname, _ispkg in pkgutil.iter_modules(self.obj.__path__):
                 if not is_visible_name(modname):
@@ -345,7 +348,7 @@ class ModuleNode(DocNode[types.ModuleType]):
         return [i for i in self.attributes if isinstance(i, FunctionNode)]
 
     @cached_property
-    def data(self) -> list[DataNode]:
+    def data(self) -> list[DataNode[Any]]:
         """A list of data objects in module's this attributes."""
         return [i for i in self.attributes if isinstance(i, DataNode)]
 
@@ -358,12 +361,12 @@ class ClassNode(DocNode[type]):
 
         name: str
         kind: str
-        node: DocNode
+        node: DocNode[Any]
 
     @cached_property
     def attributes(self) -> list[ClassNode.Attribute]:
         """A list of attributes of this class."""
-        attributes = []
+        attributes: list[ClassNode.Attribute] = []
         for name in filter(is_visible_name, dir(self.obj)):
             if isinstance(self.obj, Enum) and name == "__init__":
                 continue
@@ -394,7 +397,7 @@ class ClassNode(DocNode[type]):
                 kind = "data"
 
             # get original function from class method or static method
-            if kind == "class method" or kind == "static method":
+            if kind in {"class method", "static method"}:
                 value = value.__func__  # type: ignore
 
             # functools.cached_property needs special handling
@@ -439,7 +442,16 @@ class ClassNode(DocNode[type]):
 
 
 class FunctionNode(
-    DocNode[Union[types.FunctionType, types.MethodType, types.MethodDescriptorType]]
+    DocNode[
+        Union[
+            types.FunctionType,
+            types.MethodType,
+            types.BuiltinFunctionType,
+            types.WrapperDescriptorType,
+            types.MethodDescriptorType,
+            types.ClassMethodDescriptorType,
+        ]
+    ]
 ):
     """The class of function node."""
 
@@ -469,7 +481,7 @@ class FunctionNode(
         return False
 
     @cached_property
-    def is_lambda_func(self):
+    def is_lambda_func(self) -> bool:
         """Returns True if this function is a lambda function."""
         return self.realname == "<lambda>"
 

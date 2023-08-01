@@ -30,11 +30,11 @@ def import_module(modname: str) -> ModuleType:
         # Catch KeyboardInterrupt may prevent user kill python
         # when the module took a too long time to import.
         raise
-    except BaseException as exc:
+    except BaseException as exc:  # noqa: BLE001
         raise ImportError(exc, traceback.format_exc()) from exc
 
 
-def format_annotation(annotation: Any, base_module: ModuleType | None = None) -> str:
+def format_annotation(annotation: Any, base_module: str | None = None) -> str:
     """Format the annotation.
 
     Args:
@@ -50,9 +50,9 @@ def format_annotation(annotation: Any, base_module: ModuleType | None = None) ->
         return annotation
     # use regex delete 'ForwardRef' from annotation
     return re.sub(
-        r"\bForwardRef\((?P<quot>[\'\"])(?P<string>.*?)(?P=quot)\)",  # type: ignore
-        r"\g<string>",  # type: ignore
-        inspect.formatannotation(annotation, base_module),  # type: ignore
+        r"\bForwardRef\((?P<quot>[\'\"])(?P<string>.*?)(?P=quot)\)",
+        r"\g<string>",
+        inspect.formatannotation(annotation, base_module),
     )
 
 
@@ -104,7 +104,7 @@ def format_signature(signature: inspect.Signature, type_comments: bool = False) 
     if type_comments:
         return str(signature)
 
-    result = []
+    result: list[str] = []
     render_pos_only_separator = False
     render_kw_only_separator = True
     for param in signature.parameters.values():

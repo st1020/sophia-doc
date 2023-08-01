@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from docstring_parser import Docstring, DocstringStyle, parse
 
@@ -29,7 +29,7 @@ class Builder(ABC):
         module: ModuleNode,
         *,
         docstring_style: DocstringStyle = DocstringStyle.AUTO,
-    ):
+    ) -> None:
         """Init Builder.
 
         Args:
@@ -43,7 +43,7 @@ class Builder(ABC):
         """Get a new instance of Builder class, is used in write method."""
         return self.__class__(module, docstring_style=self.docstring_style)
 
-    def get_docstring(self, obj: DocNode) -> Docstring:
+    def get_docstring(self, obj: DocNode[Any]) -> Docstring:
         """Get the Docstring object of a DocNode object.
 
         Args:
@@ -60,11 +60,11 @@ class Builder(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_path(self, **kwargs) -> Path:
+    def get_path(self, **kwargs: Any) -> Path:
         """Get the path to write file."""
         raise NotImplementedError
 
-    def write(self, output_dir: str, *, overwrite: bool = False, **kwargs) -> None:
+    def write(self, output_dir: str, *, overwrite: bool = False, **kwargs: Any) -> None:
         """Write file to output dir.
 
         Args:
@@ -77,7 +77,7 @@ class Builder(ABC):
         filepath.parent.mkdir(parents=True, exist_ok=True)
         if not self.module.is_namespace:
             filepath.touch(exist_ok=overwrite)
-            with open(filepath, "w", encoding="utf-8") as f:
+            with filepath.open("w", encoding="utf-8") as f:
                 f.write(self.text())
         for submodule in self.module.submodules:
             self._new_builder(submodule).write(

@@ -5,8 +5,10 @@ import inspect
 import warnings
 from pathlib import Path
 from textwrap import indent
+from typing import Any
 
 from docstring_parser import Docstring, DocstringParam, DocstringStyle
+from typing_extensions import override
 
 from sophia_doc import ClassNode, DataNode, DocNode, FunctionNode, ModuleNode
 from sophia_doc.builders import Builder
@@ -72,7 +74,7 @@ class Markdown:
     @staticmethod
     def italic(text: str) -> str:
         """Italic."""
-        return f"*{text}*"
+        return f"_{text}_"
 
     @staticmethod
     def bold(text: str) -> str:
@@ -109,12 +111,13 @@ class MarkdownBuilder(Builder):
         docstring_style: DocstringStyle = DocstringStyle.AUTO,
         anchor_extend: bool = False,
         ignore_data: bool = False,
-    ):
+    ) -> None:
         """Init Markdown Builder."""
         super().__init__(module, docstring_style=docstring_style)
         self.anchor_extend = anchor_extend
         self.ignore_data = ignore_data
 
+    @override
     def _new_builder(self, module: ModuleNode) -> Builder:
         return self.__class__(
             module,
@@ -123,11 +126,12 @@ class MarkdownBuilder(Builder):
             ignore_data=self.ignore_data,
         )
 
+    @override
     def get_path(
         self,
         exclude_module_name: bool = False,
         init_file_name: str = "index.md",
-        **kwargs,  # noqa: ARG002
+        **_kwagrs: Any,
     ) -> Path:
         """Get the path to write file.
 
@@ -137,7 +141,6 @@ class MarkdownBuilder(Builder):
                 form `./doc/sophia_doc/index.md` to `./doc/index.md`.
             init_file_name: The name of Markdown file
                 from __init__.py, `index.md` by default.
-            **kwargs: Other args.
         """
         if exclude_module_name:
             path = Path(*self.module.name.split(".")[1:])
@@ -147,6 +150,7 @@ class MarkdownBuilder(Builder):
             path / init_file_name if self.module.is_package else path.with_suffix(".md")
         )
 
+    @override
     def text(self) -> str:
         """Get string of current module documentation."""
         result: list[str] = []
@@ -157,13 +161,13 @@ class MarkdownBuilder(Builder):
 
         result.extend(self.build_doc(node) for node in self.module.attributes)
 
-        return self._build_str(result).replace("<", r"\<").replace(">", r"\>")
+        return self._build_str(result)
 
     @staticmethod
     def _build_str(str_list: list[str]) -> str:
         return "\n\n".join(filter(lambda x: x, str_list))
 
-    def build_doc(self, node: DocNode, *, level: int = 1, **kwargs) -> str:
+    def build_doc(self, node: DocNode[Any], *, level: int = 1, **kwargs: Any) -> str:
         """Build markdown string from a DocNode.
 
         Args:
@@ -182,7 +186,7 @@ class MarkdownBuilder(Builder):
             return self.build_data(node, level=level, **kwargs)
         raise ValueError
 
-    def _extend_title(self, title: str, node: DocNode) -> str:
+    def _extend_title(self, title: str, node: DocNode[Any]) -> str:
         return title + " {#" + node.qualname + "}" if self.anchor_extend else title
 
     def build_class(self, node: ClassNode, *, level: int = 1) -> str:
@@ -195,14 +199,14 @@ class MarkdownBuilder(Builder):
         Returns:
             A markdown string.
         """
-        _kind = []
+        _kind: list[str] = []
         if node.is_abstract:
             _kind.append("abstract")
         if isinstance(node.obj, Exception):
             _kind.append("exception")
         else:
             _kind.append("class")
-        _kind = " ".join(_kind)
+        kind = " ".join(_kind)
 
         init = None
         for attr in node.attributes:
@@ -212,7 +216,7 @@ class MarkdownBuilder(Builder):
 
         result: list[str] = []
         title = Markdown.title(
-            Markdown.italic(_kind) + " " + Markdown.inline_code(node.name), level + 1
+            Markdown.italic(kind) + " " + Markdown.inline_code(node.name), level + 1
         )
         if init and init.signature:
             title += format_signature(init.signature)
@@ -251,7 +255,7 @@ class MarkdownBuilder(Builder):
                     annotation, _ = parma_dict.get(param_doc.arg_name, (None, None))
                     if param_doc.type_name is None and annotation:
                         param_doc.type_name = format_annotation(
-                            annotation, base_module=node.module.obj
+                            annotation, base_module=node.module.name
                         )
                     parma_dict[param_doc.arg_name] = (  # type:ignore
                         annotation,
@@ -265,7 +269,7 @@ class MarkdownBuilder(Builder):
                             parser_param(
                                 name,
                                 format_annotation(
-                                    annotation, base_module=node.module.obj
+                                    annotation, base_module=node.module.name
                                 ),
                                 None,
                             )
@@ -286,7 +290,7 @@ class MarkdownBuilder(Builder):
                     node_,
                     level=level + 1,
                     kind=kind,
-                    ignore_first_arg=kind == "method" or kind == "class method",
+                    ignore_first_arg=kind in {"method", "class method"},
                 )
             )
 
@@ -296,15 +300,16 @@ class MarkdownBuilder(Builder):
     def _build_argument(
         node: FunctionNode, docstring: Docstring, *, ignore_first_arg: bool = False
     ) -> list[str]:
-        result = []
+        result: list[str] = []
         if docstring.params or (node.signature and node.signature.parameters):
             parma_dict: dict[str, tuple[inspect.Parameter, DocstringParam | None]] = {}
             if node.signature and node.signature.parameters:
-                for key, param in node.signature.parameters.items():
+                for _key, param in node.signature.parameters.items():
+                    key = _key
                     if param.kind == param.VAR_POSITIONAL:
-                        key = "*" + key  # noqa: PLW2901
+                        key = "*" + key
                     elif param.kind == param.VAR_KEYWORD:
-                        key = "**" + key  # noqa: PLW2901
+                        key = "**" + key
                     parma_dict[key] = (param, None)
 
             if docstring.params:
@@ -320,12 +325,12 @@ class MarkdownBuilder(Builder):
                     param, _ = parma_dict.get(param_doc.arg_name, (None, None))
                     if param_doc.type_name is None and param:
                         param_doc.type_name = format_annotation(
-                            param.annotation, base_module=node.module.obj
+                            param.annotation, base_module=node.module.name
                         )
                     parma_dict[param_doc.arg_name] = (param, param_doc)  # type:ignore
 
             if ignore_first_arg and parma_dict:
-                parma_dict.pop(list(parma_dict.keys())[0])
+                parma_dict.pop(next(iter(parma_dict.keys())))
 
             if parma_dict:
                 result.append("- **Arguments**")
@@ -337,7 +342,7 @@ class MarkdownBuilder(Builder):
                             parser_param(
                                 param.name,
                                 format_annotation(
-                                    param.annotation, base_module=node.module.obj
+                                    param.annotation, base_module=node.module.name
                                 ),
                                 None,
                             )
@@ -355,7 +360,6 @@ class MarkdownBuilder(Builder):
         level: int = 1,
         kind: str = "function",
         ignore_first_arg: bool = False,
-        **kwargs,  # noqa: ARG002
     ) -> str:
         """Build markdown string from a FunctionNode.
 
@@ -365,7 +369,6 @@ class MarkdownBuilder(Builder):
             kind: The function kind, like 'function', 'method', 'class method'.
             ignore_first_arg: If True the first argument of the function
                 will be ignored.
-            **kwargs: Other args.
 
         Returns:
             A markdown string.
@@ -377,19 +380,19 @@ class MarkdownBuilder(Builder):
             )
             return ""
 
-        _kind = []
+        _kind: list[str] = []
         if node.is_async:
             _kind.append("async")
         if node.is_lambda_func:
             _kind.append("lambda")
         _kind.append(kind)
-        _kind = " ".join(_kind)
+        kind = " ".join(_kind)
 
         result: list[str] = []
         result.append(
             self._extend_title(
                 Markdown.title(
-                    Markdown.italic(_kind)
+                    Markdown.italic(kind)
                     + " "
                     + Markdown.inline_code(
                         f"{node.name}{format_signature(node.signature)}"
@@ -407,21 +410,21 @@ class MarkdownBuilder(Builder):
             self._build_argument(node, docstring, ignore_first_arg=ignore_first_arg)
         )
 
-        if docstring.returns or (
-            node.signature
-            and node.signature.return_annotation is not inspect.Signature.empty
+        if (
+            docstring.returns is not None
+            or node.signature.return_annotation is not inspect.Signature.empty
         ):
             result.append("- **Returns**")
 
             type_name = ""
-            if docstring.returns is not None and docstring.returns.type_name:
-                type_name = docstring.returns.type_name
-            elif (
-                node.signature is not None
-                and node.signature.return_annotation is not inspect.Signature.empty
+            if (
+                docstring.returns is not None
+                and docstring.returns.type_name is not None
             ):
+                type_name = docstring.returns.type_name
+            elif node.signature.return_annotation is not inspect.Signature.empty:
                 type_name = format_annotation(
-                    node.signature.return_annotation, base_module=node.module.obj
+                    node.signature.return_annotation, base_module=node.module.name
                 )
 
             if type_name:
@@ -450,11 +453,10 @@ class MarkdownBuilder(Builder):
 
     def build_data(
         self,
-        node: DataNode,
+        node: DataNode[Any],
         *,
         level: int = 1,
         kind: str = "data",
-        **kwargs,  # noqa: ARG002
     ) -> str:
         """Build markdown string from a DataNode.
 
@@ -462,7 +464,6 @@ class MarkdownBuilder(Builder):
             node: A DataNode.
             level: The title level.
             kind: The function kind, like 'data', 'property'.
-            **kwargs: Other args.
 
         Returns:
             A markdown string.
@@ -486,7 +487,7 @@ class MarkdownBuilder(Builder):
                 "Type: {type_name}".format(
                     type_name=Markdown.italic(
                         format_annotation(
-                            node.annotations["return"], base_module=node.module.obj
+                            node.annotations["return"], base_module=node.module.name
                         )
                     )
                 )
