@@ -88,6 +88,13 @@ parser.add_argument(
     help="The directory to write document.",
 )
 parser.add_argument(
+    "-f",
+    "--format",
+    type=str,
+    default="markdown",
+    help="File format of document.",
+)
+parser.add_argument(
     "--docstring-style",
     type=str,
     default="auto",
@@ -132,6 +139,7 @@ parser.add_argument(
 def cli() -> None:
     """The Sophia-doc Command-line interface."""
     args = parser.parse_args()
+    assert args.format == "markdown"
     MarkdownBuilder(
         ModuleNode(import_module(args.module)),
         docstring_style=getattr(DocstringStyle, args.docstring_style.upper()),
