@@ -236,7 +236,9 @@ class MarkdownBuilder(Builder):
         if docstring.params or node.annotations:
             result.append("- **Attributes**")
 
-            parma_dict: dict[str, tuple[inspect.Parameter, DocstringParam | None]] = {}
+            parma_dict: dict[
+                str, tuple[inspect.Parameter | None, DocstringParam | None]
+            ] = {}
             if node.annotations:
                 parma_dict = {
                     key: (annotation, None)
@@ -251,10 +253,7 @@ class MarkdownBuilder(Builder):
                         param_doc.type_name = format_annotation(
                             annotation, base_module=node.module.name
                         )
-                    parma_dict[param_doc.arg_name] = (  # type:ignore
-                        annotation,
-                        param_doc,
-                    )
+                    parma_dict[param_doc.arg_name] = (annotation, param_doc)
 
             for name, (annotation, param_doc) in parma_dict.items():
                 if param_doc is None:
@@ -262,7 +261,8 @@ class MarkdownBuilder(Builder):
                         Markdown.indent(
                             parser_param(
                                 name,
-                                format_annotation(
+                                annotation
+                                and format_annotation(
                                     annotation, base_module=node.module.name
                                 ),
                                 None,
@@ -294,7 +294,9 @@ class MarkdownBuilder(Builder):
     ) -> list[str]:
         result: list[str] = []
         if docstring.params or (node.signature and node.signature.parameters):
-            parma_dict: dict[str, tuple[inspect.Parameter, DocstringParam | None]] = {}
+            parma_dict: dict[
+                str, tuple[inspect.Parameter | None, DocstringParam | None]
+            ] = {}
             if node.signature and node.signature.parameters:
                 for _key, param in node.signature.parameters.items():
                     key = _key
@@ -306,8 +308,10 @@ class MarkdownBuilder(Builder):
 
             if docstring.params:
                 for param_doc in docstring.params:
-                    if param_doc.arg_name not in parma_dict and (
-                        node.signature and node.signature.parameters
+                    if (
+                        param_doc.arg_name not in parma_dict
+                        and node.signature
+                        and node.signature.parameters
                     ):
                         warnings.warn(
                             f'The argument "{param_doc.arg_name}" of {node.qualname}'
@@ -319,7 +323,7 @@ class MarkdownBuilder(Builder):
                         param_doc.type_name = format_annotation(
                             param.annotation, base_module=node.module.name
                         )
-                    parma_dict[param_doc.arg_name] = (param, param_doc)  # type:ignore
+                    parma_dict[param_doc.arg_name] = (param, param_doc)
 
             if ignore_first_arg and parma_dict:
                 parma_dict.pop(next(iter(parma_dict.keys())))
@@ -328,7 +332,9 @@ class MarkdownBuilder(Builder):
                 result.append("- **Arguments**")
 
             for param, param_doc in parma_dict.values():
-                if param_doc is None:
+                if param_doc is not None:
+                    result.append(Markdown.indent(parser_docstring_param(param_doc)))
+                elif param is not None:
                     result.append(
                         Markdown.indent(
                             parser_param(
@@ -340,8 +346,6 @@ class MarkdownBuilder(Builder):
                             )
                         )
                     )
-                else:
-                    result.append(Markdown.indent(parser_docstring_param(param_doc)))
 
         return result
 

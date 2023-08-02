@@ -21,7 +21,7 @@ import types
 import warnings
 from enum import Enum
 from functools import cached_property
-from typing import Any, Generic, NamedTuple, TypeVar, Union, cast
+from typing import Any, Generic, NamedTuple, TypeVar, Union
 
 from typing_extensions import override
 
@@ -30,111 +30,22 @@ from sophia_doc.utils import import_module
 _T = TypeVar("_T")
 
 
-def _find_class(func: Any) -> type | None:
-    # cut from pydoc
-    cls = sys.modules.get(func.__module__)
-    if cls is None:
-        return None
-    for name in func.__qualname__.split(".")[:-1]:
-        cls = getattr(cls, name)
-    if not inspect.isclass(cls):
-        return None
-    return cls
-
-
-def _find_doc(obj: Any) -> str | None:
-    name: str
-    if inspect.ismethod(obj):
-        name = cast(str, obj.__func__.__name__)  # type: ignore
-        self = obj.__self__
-        if inspect.isclass(self) and getattr(self, name).__func__ is obj.__func__:
-            # class method
-            cls = self
-        else:
-            cls = self.__class__
-    elif inspect.isfunction(obj):
-        name = obj.__name__
-        cls = _find_class(obj)
-        if cls is None or getattr(cls, name) is not obj:
-            return None
-    elif inspect.isbuiltin(obj):
-        name = obj.__name__
-        self = obj.__self__
-        if inspect.isclass(self) and self.__qualname__ + "." + name == obj.__qualname__:
-            # class method
-            cls = self
-        else:
-            cls = self.__class__
-    # Should be tested before isdatadescriptor().
-    elif isinstance(obj, property):
-        func = obj.fget
-        assert func is not None
-        name = func.__name__
-        cls = _find_class(func)
-        if cls is None or getattr(cls, name) is not obj:
-            return None
-    elif inspect.ismethoddescriptor(obj) or inspect.isdatadescriptor(obj):
-        name = cast(str, obj.__name__)  # type: ignore
-        cls: Any = obj.__objclass__  # type: ignore
-        if getattr(cls, name) is not obj:
-            return None
-        if inspect.ismemberdescriptor(obj):
-            slots = getattr(cls, "__slots__", None)
-            if isinstance(slots, dict) and name in slots:
-                return slots[name]  # type: ignore
-    else:
-        return None
-    for base in cls.__mro__:
-        try:
-            doc = _get_own_doc(getattr(base, name))
-        except AttributeError:
-            continue
-        if doc is not None:
-            return doc
-    return None
-
-
-def _get_own_doc(obj: Any) -> str | None:
-    """Get the documentation string for an object if it is not inherited from its class."""
-    # cut from pydoc
-    try:
-        doc = object.__getattribute__(obj, "__doc__")
-        if doc is None:
-            return None
-        if obj is not type:
-            typedoc = type(obj).__doc__
-            if isinstance(typedoc, str) and typedoc == doc:
-                return None
-    except AttributeError:
-        return None
-    else:
-        return doc
-
-
-def _getdoc(obj: Any) -> str | None:
-    """Get the documentation string for an object.
+def getdoc(obj: Any) -> str:
+    """Get the documentation string for an object if it is not inherited from its class.
 
     All tabs are expanded to space. To clean up docstrings that are
     indented to line up with blocks of code, any whitespace than can be
     uniformly removed from the second line onwards is removed.
     """
-    # cut from pydoc
-    doc = _get_own_doc(obj)
-    if doc is None:
-        try:
-            doc = _find_doc(obj)
-        except (AttributeError, TypeError):
-            return None
-    if not isinstance(doc, str):
-        return None
-    return inspect.cleandoc(doc)
-
-
-def getdoc(obj: Any) -> str:
-    """Get the docstring string or comments for an object."""
-    # cut from pydoc
-    result = _getdoc(obj) or inspect.getcomments(obj)
-    return result or ""
+    try:
+        doc = object.__getattribute__(obj, "__doc__")
+        if doc is not None and obj is not type:
+            typedoc = type(obj).__doc__
+            if isinstance(typedoc, str) and typedoc == doc:
+                return ""
+    except AttributeError:
+        pass
+    return inspect.getdoc(obj) or ""
 
 
 def isdata(obj: object) -> bool:
@@ -218,7 +129,7 @@ class DocNode(Generic[_T]):
     @cached_property
     def docstring(self) -> str:
         """Docstring of this object."""
-        return getdoc(self.obj)
+        return getdoc(self.obj) or inspect.getcomments(self.obj) or ""
 
     @staticmethod
     def from_obj(
@@ -397,7 +308,7 @@ class ClassNode(DocNode[type]):
                 kind = "data"
 
             # get original function from class method or static method
-            if kind in {"class method", "static method"}:
+            if isinstance(value, (staticmethod, classmethod)):
                 value = value.__func__  # type: ignore
 
             # functools.cached_property needs special handling
