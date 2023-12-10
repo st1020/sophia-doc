@@ -22,7 +22,7 @@ requires-python = ">=3.8"
 dependencies = ["docstring-parser>=0.15", "typing-extensions>=4.7.1"]
 
 [tool.pdm.dev-dependencies]
-lint = ["black", "ruff"]
+lint = ["ruff"]
 
 [project.urls]
 Homepage = "https://github.com/st1020/sophia-doc"
@@ -31,9 +31,6 @@ Source = "https://github.com/st1020/sophia-doc"
 [project.scripts]
 sophia-doc = "sophia_doc.__main__:cli"
 
-[tool.black]
-target-version = ["py38", "py39", "py310", "py311"]
-
 [tool.ruff]
 line-length = 88
 select = ["ALL"]
@@ -41,7 +38,8 @@ ignore = [
   "C90",     # mccabe
   "FBT",     # flake8-boolean-trap
   "COM",     # flake8-commas
-  "E501",    # Line too long, handled by black
+  "ISC",     # flake8-implicit-str-concat
+  "E501",    # Line too long, handled by formatter
   "ANN101",  # Missing type annotation for self
   "ANN102",  # Missing type annotation for cls
   "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
