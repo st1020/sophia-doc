@@ -198,11 +198,12 @@ class MarkdownBuilder(Builder):
         raise ValueError
 
     def _extend_title(self, title: str, node: DocNode[Any]) -> str:
-        return (
-            title + " {#" + Markdown.escape(node.qualname) + "}"
-            if self.anchor_extend
-            else title
-        )
+        if not self.anchor_extend:
+            return title
+        anchor = node.qualname
+        for c in "*#\\()[]<>_`.":
+            anchor = anchor.replace(c, "-")
+        return title + " {#" + anchor + "}"
 
     def build_class(self, node: ClassNode, *, level: int = 1, **_kwagrs: Any) -> str:
         """Build markdown string from a ClassNode.
