@@ -1,4 +1,5 @@
 """Builder is class to build ModuleNode to target formats."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -36,6 +37,7 @@ class Builder(ABC):
             module: The Module Node to build.
             docstring_style: The docstring style. Defaults to DocstringStyle.AUTO.
         """
+        super().__init__()
         self.module = module
         self.docstring_style = docstring_style
 

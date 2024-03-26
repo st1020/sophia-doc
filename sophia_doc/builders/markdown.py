@@ -1,4 +1,5 @@
 """The Markdown Builder."""
+
 from __future__ import annotations
 
 import inspect
@@ -314,7 +315,7 @@ class MarkdownBuilder(Builder):
                         and node.signature.parameters
                     ):
                         warnings.warn(
-                            f'The argument "{param_doc.arg_name}" of {node.qualname}'
+                            f'The argument "{param_doc.arg_name}" of {node.qualname} '
                             f"can not find in function signature.",
                             stacklevel=1,
                         )

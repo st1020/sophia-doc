@@ -11,6 +11,7 @@ builder = sophia_doc.builders.markdown.MarkdownBuilder(module)
 builder.write('doc_dir')
 ```
 """
+
 from __future__ import annotations
 
 import inspect
@@ -21,7 +22,7 @@ import types
 import warnings
 from enum import Enum
 from functools import cached_property
-from typing import Any, Generic, NamedTuple, TypeVar, Union
+from typing import Any, Generic, NamedTuple, Type, TypeVar, Union
 
 from typing_extensions import override
 
@@ -106,6 +107,7 @@ class DocNode(Generic[_T]):
 
     def __init__(self, obj: _T, name: str, qualname: str, module: ModuleNode) -> None:
         """Init DocNode."""
+        super().__init__()
         self.obj = obj
         self.name = name
         self._qualname = qualname
@@ -264,7 +266,7 @@ class ModuleNode(DocNode[types.ModuleType]):
         return [i for i in self.attributes if isinstance(i, DataNode)]
 
 
-class ClassNode(DocNode[type]):
+class ClassNode(DocNode[Type[Any]]):
     """The class of class node."""
 
     class Attribute(NamedTuple):
@@ -406,7 +408,7 @@ class DataNode(DocNode[_T]):
         if isinstance(self.obj, property):
             return get_annotations(self.obj.fget)
         if isinstance(self.obj, cached_property):
-            return get_annotations(self.obj.func)
+            return get_annotations(self.obj.func)  # type: ignore
         return get_annotations(self.obj)
 
 

@@ -1,4 +1,5 @@
 """The Sophia-doc Command-line interface."""
+
 from __future__ import annotations
 
 import argparse
@@ -21,7 +22,7 @@ else:
     _T = TypeVar("_T")
 
     class BooleanOptionalAction(Action):
-        def __init__(
+        def __init__(  # noqa: PLR0913
             self,
             option_strings: Sequence[str],
             dest: str,
@@ -139,13 +140,17 @@ parser.add_argument(
 def cli() -> None:
     """The Sophia-doc Command-line interface."""
     args = parser.parse_args()
-    assert args.format == "markdown"
-    MarkdownBuilder(
-        ModuleNode(import_module(args.module)),
-        docstring_style=getattr(DocstringStyle, args.docstring_style.upper()),
-        anchor_extend=args.anchor_extend,
-        ignore_data=args.ignore_data,
-    ).write(
+    if args.format == "markdown":
+        builder = MarkdownBuilder(
+            ModuleNode(import_module(args.module)),
+            docstring_style=getattr(DocstringStyle, args.docstring_style.upper()),
+            anchor_extend=args.anchor_extend,
+            ignore_data=args.ignore_data,
+        )
+    else:
+        msg = "format argument must be 'markdown'"
+        raise ValueError(msg)
+    builder.write(
         args.output_dir,
         overwrite=args.overwrite,
         exclude_module_name=args.exclude_module_name,
