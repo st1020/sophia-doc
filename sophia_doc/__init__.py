@@ -20,7 +20,6 @@ import sys
 import traceback
 import types
 import warnings
-from enum import Enum
 from functools import cached_property
 from typing import Any, Generic, NamedTuple, Type, TypeVar, Union
 
@@ -281,13 +280,8 @@ class ClassNode(DocNode[Type[Any]]):
         """A list of attributes of this class."""
         attributes: list[ClassNode.Attribute] = []
         for name in filter(is_visible_name, dir(self.obj)):
-            if isinstance(self.obj, Enum) and name == "__init__":
-                continue
-
-            if (
-                name != "__init__"
-                and name not in self.obj.__dict__
-                and name not in getattr(self.obj, "__slots__", [])
+            if name not in self.obj.__dict__ and name not in getattr(
+                self.obj, "__slots__", []
             ):
                 continue
 
