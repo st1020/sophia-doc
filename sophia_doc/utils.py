@@ -31,7 +31,7 @@ def import_module(modname: str) -> ModuleType:
         # Catch KeyboardInterrupt may prevent user kill python
         # when the module took a too long time to import.
         raise
-    except BaseException as exc:  # noqa: BLE001
+    except BaseException as exc:
         raise ImportError(exc, traceback.format_exc()) from exc
 
 

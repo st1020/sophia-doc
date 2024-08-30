@@ -3,77 +3,12 @@
 from __future__ import annotations
 
 import argparse
-import sys
 
 from docstring_parser import DocstringStyle
 
 from sophia_doc import ModuleNode
 from sophia_doc.builders.markdown import MarkdownBuilder
 from sophia_doc.utils import import_module
-
-if sys.version_info >= (3, 9):
-    from argparse import BooleanOptionalAction
-else:
-    from argparse import Action
-    from typing import Any, Callable, Iterable, Sequence, TypeVar
-
-    from typing_extensions import override
-
-    _T = TypeVar("_T")
-
-    class BooleanOptionalAction(Action):
-        def __init__(  # noqa: PLR0913
-            self,
-            option_strings: Sequence[str],
-            dest: str,
-            default: _T | str | None = None,
-            type: Callable[[str], _T] | Any | None = None,
-            choices: Iterable[_T] | None = None,
-            required: bool = False,
-            help: str | None = None,
-            metavar: str | tuple[str, ...] | None = None,
-        ) -> None:
-            _option_strings: list[str] = []
-            for option_string in option_strings:
-                _option_strings.append(option_string)
-
-                if option_string.startswith("--"):
-                    option_string = "--no-" + option_string[2:]  # noqa: PLW2901
-                    _option_strings.append(option_string)
-
-            if help is not None and default is not None:
-                help += " (default: %(default)s)"
-
-            super().__init__(
-                option_strings=_option_strings,
-                dest=dest,
-                nargs=0,
-                default=default,
-                type=type,
-                choices=choices,
-                required=required,
-                help=help,
-                metavar=metavar,
-            )
-
-        @override
-        def __call__(
-            self,
-            _parser: Any,
-            namespace: Any,
-            _values: str | Sequence[Any] | None,
-            option_string: str | None = None,
-        ) -> None:
-            if option_string is not None and option_string in self.option_strings:
-                setattr(
-                    namespace,
-                    self.dest,
-                    not option_string.startswith("--no-"),
-                )
-
-        def format_usage(self) -> str:
-            return " | ".join(self.option_strings)
-
 
 parser = argparse.ArgumentParser(
     description="Sophia_doc is a python package to automatically "
@@ -104,28 +39,28 @@ parser.add_argument(
 parser.add_argument(
     "--ignore-data",
     type=bool,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     default=False,
     help="Ignore data in Markdown text.",
 )
 parser.add_argument(
     "--anchor-extend",
     type=bool,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     default=False,
     help="Add anchor to markdown title.",
 )
 parser.add_argument(
     "--overwrite",
     type=bool,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     default=False,
     help="Overwrite any file in output directory.",
 )
 parser.add_argument(
     "--exclude-module-name",
     type=bool,
-    action=BooleanOptionalAction,
+    action=argparse.BooleanOptionalAction,
     default=False,
     help="Write file to path which exclude module name.",
 )

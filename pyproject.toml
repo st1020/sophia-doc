@@ -7,22 +7,19 @@ license = { text = "MIT" }
 readme = "README.md"
 keywords = ["sophia-doc", "documentation", "doc", "pydoc", "markdown"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "License :: OSI Approved :: MIT License",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
-  "Topic :: Documentation",
-  "Topic :: Software Development",
-  "Topic :: Software Development :: Documentation",
-  "Topic :: Text Processing",
-  "Topic :: Text Processing :: Markup",
-  "Topic :: Utilities",
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Documentation",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Text Processing",
+    "Topic :: Text Processing :: Markup",
+    "Topic :: Utilities",
 ]
-requires-python = ">=3.8"
-dependencies = ["docstring-parser>=0.15", "typing-extensions>=4.7.1"]
-
-[tool.pdm.dev-dependencies]
-lint = ["ruff"]
+requires-python = ">=3.9"
+dependencies = ["docstring_parser>=0.16", "typing-extensions>=4.7.1"]
 
 [project.urls]
 Homepage = "https://github.com/st1020/sophia-doc"
@@ -31,31 +28,29 @@ Source = "https://github.com/st1020/sophia-doc"
 [project.scripts]
 sophia-doc = "sophia_doc.__main__:cli"
 
+[tool.uv]
+dev-dependencies = ["ruff"]
+
 [tool.ruff]
 line-length = 88
-target-version = "py38"
+target-version = "py39"
 
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-  "C90",     # mccabe
-  "FBT",     # flake8-boolean-trap
-  "COM",     # flake8-commas
-  "ANN101",  # Missing type annotation for self
-  "ANN102",  # Missing type annotation for cls
-  "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
-  "PGH003",  # Use specific rule codes when ignoring type issues
-  "PLR0912", # Too many branches
+    "C90",     # mccabe
+    "FBT",     # flake8-boolean-trap
+    "COM",     # flake8-commas
+    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
+    "PGH003",  # Use specific rule codes when ignoring type issues
+    "PLR0912", # Too many branches
 ]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.ruff.lint.per-file-ignores]
-"sophia_doc/__main__.py" = ["D", "A"]
-
 [tool.pyright]
-pythonVersion = "3.8"
+pythonVersion = "3.9"
 pythonPlatform = "All"
 typeCheckingMode = "strict"
 reportCallInDefaultInitializer = true
@@ -67,6 +62,9 @@ reportShadowedImports = true
 reportUninitializedInstanceVariable = true
 reportUnnecessaryTypeIgnoreComment = true
 
+[tool.hatch.build.targets.sdist]
+include = ["/README.md", "/sophia_doc"]
+
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

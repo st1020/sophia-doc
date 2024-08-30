@@ -21,7 +21,7 @@ import traceback
 import types
 import warnings
 from functools import cached_property
-from typing import Any, Generic, NamedTuple, Type, TypeVar, Union
+from typing import Any, Generic, NamedTuple, TypeVar, Union
 
 from typing_extensions import override
 
@@ -265,7 +265,7 @@ class ModuleNode(DocNode[types.ModuleType]):
         return [i for i in self.attributes if isinstance(i, DataNode)]
 
 
-class ClassNode(DocNode[Type[Any]]):
+class ClassNode(DocNode[type[Any]]):
     """The class of class node."""
 
     class Attribute(NamedTuple):
