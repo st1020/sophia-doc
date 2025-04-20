@@ -98,7 +98,7 @@ class DocNode(Generic[_T]):
         module: The module of this object.
     """
 
-    __slots__ = ("obj", "name", "module", "_qualname")
+    __slots__ = ("_qualname", "module", "name", "obj")
     obj: _T
     name: str
     module: ModuleNode
@@ -310,7 +310,7 @@ class ClassNode(DocNode[type[Any]]):
             # functools.cached_property needs special handling
             if isinstance(value, cached_property):
                 kind = "cached property"
-                node = DataNode(value, name, self.qualname + "." + name, self.module)
+                node = DataNode(value, name, self.qualname + "." + name, self.module)  # type: ignore
             else:
                 node = DocNode.from_obj(
                     value, name, self.qualname + "." + name, self.module
