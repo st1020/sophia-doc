@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import inspect
 import pkgutil
+import pydoc
 import sys
 import traceback
 import types
@@ -28,37 +29,6 @@ from typing_extensions import override
 from sophia_doc.utils import import_module
 
 _T = TypeVar("_T")
-
-
-def getdoc(obj: Any) -> str:
-    """Get the documentation string for an object if it is not inherited from its class.
-
-    All tabs are expanded to space. To clean up docstrings that are
-    indented to line up with blocks of code, any whitespace than can be
-    uniformly removed from the second line onwards is removed.
-    """
-    try:
-        doc = object.__getattribute__(obj, "__doc__")
-        if doc is not None and obj is not type:
-            typedoc = type(obj).__doc__
-            if isinstance(typedoc, str) and typedoc == doc:
-                return ""
-    except AttributeError:
-        pass
-    return inspect.getdoc(obj) or ""
-
-
-def isdata(obj: object) -> bool:
-    """Check if an object is of a type that probably means it's data."""
-    # cut from pydoc
-    return not (
-        inspect.ismodule(obj)
-        or inspect.isclass(obj)
-        or inspect.isroutine(obj)
-        or inspect.isframe(obj)
-        or inspect.istraceback(obj)
-        or inspect.iscode(obj)
-    )
 
 
 def is_visible_name(name: str, _all: list[str] | None = None) -> bool:
@@ -130,7 +100,7 @@ class DocNode(Generic[_T]):
     @cached_property
     def docstring(self) -> str:
         """Docstring of this object."""
-        return getdoc(self.obj) or inspect.getcomments(self.obj) or ""
+        return pydoc.getdoc(self.obj)
 
     @staticmethod
     def from_obj(
@@ -156,7 +126,7 @@ class DocNode(Generic[_T]):
                 return FunctionNode(obj, name, qualname, module)
         except AttributeError:
             pass
-        if isdata(obj):
+        if pydoc.isdata(obj):
             return DataNode(obj, name, qualname, module)
         return OtherNode(obj, name, qualname, module)
 
