@@ -38,28 +38,24 @@ parser.add_argument(
 )
 parser.add_argument(
     "--ignore-data",
-    type=bool,
     action=argparse.BooleanOptionalAction,
     default=False,
     help="Ignore data in Markdown text.",
 )
 parser.add_argument(
     "--anchor-extend",
-    type=bool,
     action=argparse.BooleanOptionalAction,
     default=False,
     help="Add anchor to markdown title.",
 )
 parser.add_argument(
     "--overwrite",
-    type=bool,
     action=argparse.BooleanOptionalAction,
     default=False,
     help="Overwrite any file in output directory.",
 )
 parser.add_argument(
     "--exclude-module-name",
-    type=bool,
     action=argparse.BooleanOptionalAction,
     default=False,
     help="Write file to path which exclude module name.",

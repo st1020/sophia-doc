@@ -28,12 +28,11 @@ Source = "https://github.com/st1020/sophia-doc"
 [project.scripts]
 sophia-doc = "sophia_doc.__main__:cli"
 
-[tool.uv]
-dev-dependencies = ["ruff"]
+[dependency-groups]
+lint = ["ruff"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py39"
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -58,7 +57,6 @@ reportImplicitOverride = true
 reportImportCycles = true
 reportMissingSuperCall = true
 reportPropertyTypeMismatch = true
-reportShadowedImports = true
 reportUninitializedInstanceVariable = true
 reportUnnecessaryTypeIgnoreComment = true
 
