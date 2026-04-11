@@ -257,6 +257,10 @@ class ClassNode(DocNode[type[Any]]):
 
             value = getattr(self.obj, name)
 
+            value_module = inspect.getmodule(value)
+            if value_module is not None and value_module is not self.module.obj:
+                continue
+
             if isinstance(value, (staticmethod, types.BuiltinMethodType)):
                 kind = "static method"
             elif isinstance(value, (classmethod, types.ClassMethodDescriptorType)):
